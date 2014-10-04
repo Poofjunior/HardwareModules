@@ -22,15 +22,18 @@ module spiSendReceive( input logic cs, sck, mosi,
             output logic miso,
             output logic [7:0] dataReceived);
 
+    logic setNewData;
+    dataCtrl dataCtrlInst(.cs(cs), .sck(sck), .setNewData(setNewData));
     logic [7:0] shiftReg;
-    
+    logic validClk;
+	 
     assign validClk = cs ? 0   :
                            sck;
 
     
-    always_ff @ (negedge validClk, posedge cs)
+    always_ff @ (negedge validClk, posedge setNewData)
     begin
-        if (cs)
+        if (setNewData)
         begin
             shiftReg[7] <= dataToSend[0];
             shiftReg[6] <= dataToSend[1];
@@ -69,5 +72,25 @@ module spiSendReceive( input logic cs, sck, mosi,
     end
 
     assign miso = shiftReg[0];
+
+endmodule
+
+
+module dataCtrl(input logic cs, sck,
+                output logic setNewData);
+
+    logic [2:0] bitCount;
+    
+    assign setNewData = ~bitCount[2] & ~bitCount[1] & ~bitCount[0];
+
+    always_ff @ (posedge sck, posedge cs)
+    begin
+        if (cs)
+            bitCount <= 3'b0;
+        else
+        begin
+            bitCount <= bitCount + 3'b1;
+        end
+    end
 
 endmodule
