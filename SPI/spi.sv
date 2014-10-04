@@ -8,11 +8,12 @@ module spi( input logic cs, sck, mosi,
             output logic miso, 
             output logic [7:0] LEDsOut);
 
-       
+            logic [7:0] temp;
+            assign temp[7:0] = LEDsOut;
 
     spiSendReceive spiInst(.cs(cs), .sck(sck), .mosi(mosi),
-                    .dataToSend(LEDsOut), .miso(miso), // get data.
-                    .dataReceived(LEDsOut));           // send it back. 
+                    .dataToSend(temp), .miso(miso), // Test: send 7
+                    .dataReceived(LEDsOut));               // display data 
 endmodule
 
 
@@ -23,9 +24,10 @@ module spiSendReceive( input logic cs, sck, mosi,
 
     logic [7:0] shiftReg;
     
-    assign validClk = cs ? 1'b0   :
+    assign validClk = cs ? 0   :
                            sck;
 
+    
     always_ff @ (negedge validClk, posedge cs)
     begin
         if (cs)
@@ -46,16 +48,24 @@ module spiSendReceive( input logic cs, sck, mosi,
         end
     end
     
-    always_ff @ (posedge validClk)
+    always_ff @ (posedge validClk, negedge cs)
     begin
-        dataReceived[0] <= mosi;
-        dataReceived[1] <= dataReceived[0];
-        dataReceived[2] <= dataReceived[1];
-        dataReceived[3] <= dataReceived[2];
-        dataReceived[4] <= dataReceived[3];
-        dataReceived[5] <= dataReceived[4];
-        dataReceived[6] <= dataReceived[5];
-        dataReceived[7] <= dataReceived[6];
+        if (~cs)
+        begin
+            dataReceived[7:0] <= 8'b0;
+        end
+        else
+        begin
+        // Handle Input.
+            dataReceived[7] <= mosi;
+            dataReceived[6] <= dataReceived[7];
+            dataReceived[5] <= dataReceived[6];
+            dataReceived[4] <= dataReceived[5];
+            dataReceived[3] <= dataReceived[4];
+            dataReceived[2] <= dataReceived[3];
+            dataReceived[1] <= dataReceived[2];
+            dataReceived[0] <= dataReceived[1];
+        end
     end
 
     assign miso = shiftReg[0];
