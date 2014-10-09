@@ -1,7 +1,7 @@
 /**
  * synthesizable spi peripheral
  * Joshua Vasquez
- * September 26 - 27, 2014
+ * September 26 - October 8, 2014
  */
 
 module spi( input logic cs, sck, mosi, 
@@ -10,10 +10,11 @@ module spi( input logic cs, sck, mosi,
 
             logic [7:0] temp;
             assign temp[7:0] = LEDsOut;
-
+// Display most recent data.
+// Send previous data.
     spiSendReceive spiInst(.cs(cs), .sck(sck), .mosi(mosi),
-                    .dataToSend(temp), .miso(miso), // Test: send 7
-                    .dataReceived(LEDsOut));               // display data 
+                    .dataToSend(LEDsOut), .miso(miso), 
+                    .dataReceived(LEDsOut));  
 endmodule
 
 
@@ -51,25 +52,18 @@ module spiSendReceive( input logic cs, sck, mosi,
         end
     end
     
-    always_ff @ (posedge validClk, negedge cs)
+    always_ff @ (posedge validClk)
     begin
-        if (~cs)
-        begin
-            dataReceived[7:0] <= 8'b0;
-        end
-        else
-        begin
         // Handle Input.
-            dataReceived[7] <= mosi;
-            dataReceived[6] <= dataReceived[7];
-            dataReceived[5] <= dataReceived[6];
-            dataReceived[4] <= dataReceived[5];
-            dataReceived[3] <= dataReceived[4];
-            dataReceived[2] <= dataReceived[3];
-            dataReceived[1] <= dataReceived[2];
-            dataReceived[0] <= dataReceived[1];
-        end
-    end
+            dataReceived[0] <= mosi;
+            dataReceived[1] <= dataReceived[0];
+            dataReceived[2] <= dataReceived[1];
+            dataReceived[3] <= dataReceived[2];
+            dataReceived[4] <= dataReceived[3];
+            dataReceived[5] <= dataReceived[4];
+            dataReceived[6] <= dataReceived[5];
+            dataReceived[7] <= dataReceived[6];
+      end
 
     assign miso = shiftReg[0];
 
@@ -83,7 +77,7 @@ module dataCtrl(input logic cs, sck,
     
     assign setNewData = ~bitCount[2] & ~bitCount[1] & ~bitCount[0];
 
-    always_ff @ (posedge sck, posedge cs)
+    always_ff @ (negedge sck, posedge cs)
     begin
         if (cs)
             bitCount <= 3'b0;
