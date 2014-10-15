@@ -11,8 +11,8 @@ module spiSendReceive( input logic cs, sck, mosi, setNewData,
 
     logic [7:0] shiftReg;
     logic validClk;
-	 
-    assign validClk = cs ? 0   :
+  
+    assign validClk = cs ? 1'b0   :
                            sck;
     
     always_ff @ (negedge validClk, posedge setNewData)
@@ -53,20 +53,93 @@ module spiSendReceive( input logic cs, sck, mosi, setNewData,
 endmodule
 
 
-module dataCtrl(input logic cs, sck,
-                output logic setNewData, writeEnable);
 
-    logic [2:0] bitCount;
-    
-    assign setNewData = ~bitCount[2] & ~bitCount[1] & ~bitCount[0];
 
-    always_ff @ (negedge sck, posedge cs)
+module dataCtrl(input logic cs, sck, 
+					 input logic [7:0]spiDataIn,
+                output logic setNewData,
+					 output logic [7:0] addressOut);
+
+    logic [10:0] bitCount;
+	 
+	 logic byteOut;
+	 logic byteOutNegEdge;
+	 logic andOut;	// somewhat unecessary intermediate wire name.
+    assign andOut = bitCount[2] & bitCount[1] & bitCount[0];
+
+      
+      always_ff @ (posedge sck, posedge cs)
     begin
         if (cs)
-            bitCount <= 3'b0;
+    begin
+            bitCount <= 5'b0000;
+				byteOut <= 1'b1;
+        end
         else
         begin
-            bitCount <= bitCount + 3'b1;
+    bitCount <= bitCount + 5'b0001;
+    byteOut <= andOut;
         end
     end
+	 
+	 
+	 
+	 
+	 
+	 always_ff @ (negedge sck, posedge cs)
+	 begin
+        if (cs)
+		      byteOutNegEdge <= 1'b1;
+		  else
+				byteOutNegEdge <= byteOut;
+	 end
+	 
+	 always_latch
+	 begin
+        if (byteOutNegEdge)
+		  begin
+		      setNewData<= byteOut;
+		  end
+	 end
+	 
+	
+	
+	 logic lockBaseAddress;
+    logic writeEnableTrigger;
+    logic [7:0] offset;
+	 
+    always_ff @ (posedge byteOut, posedge cs)
+    begin
+      if (cs)
+            offset <= -8'b00000001;
+        else
+            begin
+                offset <= offset + 8'b00000001;
+            end
+    end
+  
+
+  
+    always_ff @ (posedge byteOutNegEdge, posedge cs)
+    begin
+        if (cs)
+		      lockBaseAddress <= 1'b0;
+		  else
+		  lockBaseAddress <= 1'b1;
+    end
+		
+															
+  logic byteOutCtrl;
+  assign byteOutCtrl = byteOut & ~lockBaseAddress;
+  
+  always_ff @ (posedge byteOutNegEdge, posedge byteOutCtrl)
+  begin
+      if (byteOutCtrl)
+			addressOut<= spiDataIn;
+		else
+			addressOut <= addressOut + 8'b0000001;
+  end
+  
 endmodule
+
+
