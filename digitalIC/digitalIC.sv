@@ -16,7 +16,8 @@ module digitalIC( input logic cs, sck, mosi,
     logic [7:0] memData;
 	 logic [7:0] addressOut;
 	 
-    dataCtrl dataCtrlInst(.cs(cs), .sck(sck), .spiDataIn(dataReceived),
+    dataCtrl dataCtrlInst(.cs(cs), .sck(sck), .writeEnable(writeEnable),
+								  .spiDataIn(dataReceived),
                           .setNewData(setNewData), .addressOut(addressOut));
 	 
 
@@ -26,7 +27,7 @@ module digitalIC( input logic cs, sck, mosi,
                     .dataReceived(dataReceived));  
 
     mem memInst(.memAddress(addressOut), .dataToStore(dataReceived),
-                        .writeEnable(1'b0/*writeEnable*/), .fetch(setNewData),
+                        .writeEnable(writeEnable), .fetch(setNewData),
                         .memData(memData));
 endmodule
 

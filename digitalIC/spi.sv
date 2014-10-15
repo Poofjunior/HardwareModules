@@ -57,6 +57,7 @@ endmodule
 
 module dataCtrl(input logic cs, sck, 
 					 input logic [7:0]spiDataIn,
+					 output logic writeEnable,
                 output logic setNewData,
 					 output logic [7:0] addressOut);
 
@@ -67,7 +68,8 @@ module dataCtrl(input logic cs, sck,
 	 logic andOut;	// somewhat unecessary intermediate wire name.
     assign andOut = bitCount[2] & bitCount[1] & bitCount[0];
 
-      
+   
+/// byteOut logic:   
       always_ff @ (posedge sck, posedge cs)
     begin
         if (cs)
@@ -82,10 +84,7 @@ module dataCtrl(input logic cs, sck,
         end
     end
 	 
-	 
-	 
-	 
-	 
+/// byteOutNegEdge logic: 
 	 always_ff @ (negedge sck, posedge cs)
 	 begin
         if (cs)
@@ -105,9 +104,10 @@ module dataCtrl(input logic cs, sck,
 	
 	
 	 logic lockBaseAddress;
-    logic writeEnableTrigger;
+    logic writeEnableIn;
     logic [7:0] offset;
 	 
+/// offset logic:
     always_ff @ (posedge byteOut, posedge cs)
     begin
       if (cs)
@@ -119,7 +119,7 @@ module dataCtrl(input logic cs, sck,
     end
   
 
-  
+ /// lockBaseAddress logic: 
     always_ff @ (posedge byteOutNegEdge, posedge cs)
     begin
         if (cs)
@@ -131,14 +131,27 @@ module dataCtrl(input logic cs, sck,
 															
   logic byteOutCtrl;
   assign byteOutCtrl = byteOut & ~lockBaseAddress;
-  
+ 
+/// addressOut logic, setup for writeEnable logic: 
   always_ff @ (posedge byteOutNegEdge, posedge byteOutCtrl)
   begin
       if (byteOutCtrl)
-			addressOut<= spiDataIn;
+		begin
+			addressOut<= spiDataIn[6:0];
+			writeEnableIn<= spiDataIn[7];
+		end
 		else
 			addressOut <= addressOut + 8'b0000001;
   end
+  
+ /// writeEnable logic:
+ always_ff @ (posedge byteOutNegEdge, posedge cs)
+ begin
+    if (cs)
+	     writeEnable <= 1'b0;
+    else
+	     writeEnable <= writeEnableIn;
+ end
   
 endmodule
 

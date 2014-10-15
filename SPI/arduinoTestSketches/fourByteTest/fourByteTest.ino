@@ -20,7 +20,7 @@ void setup() {
   
   digitalWrite(CS, HIGH);
   SPI.begin();
-  //SPI.setClockDivider(84);  // Input up to 255 to slow down SPI clock speed.
+  SPI.setClockDivider(255);  // Input up to 255 to slow down SPI clock speed.
   SPI.setDataMode(SPI_MODE0);
   
   Serial.begin(115200);
@@ -30,22 +30,22 @@ void setup() {
 void loop() {
   // Perform an 8-bit Transfer:
   while(!Serial.available());
-  char dataToTransfer = Serial.read();
- 
+  char dataToTransfer = Serial.read() - 48;
+  Serial.print("Four-Byte read starting from reg: ");
+  Serial.println(dataToTransfer, DEC);
   digitalWrite(CS, LOW);
-
-  delay(1);
-  char dataIn = SPI.transfer(dataToTransfer);
+  Serial.println("Receiving: ");
+  delay(10);
+  SPI.transfer(dataToTransfer);
+  char dataIn = SPI.transfer(0);
   Serial.println(dataIn, DEC);  
   dataIn = SPI.transfer(0);
   Serial.println(dataIn, DEC);  
-  dataIn = SPI.transfer(1);
+  dataIn = SPI.transfer(0);
   Serial.println(dataIn, DEC);  
-  dataIn = SPI.transfer(2);
+  dataIn = SPI.transfer(0);
   Serial.println(dataIn, DEC);  
-  dataIn = SPI.transfer(3);
-  Serial.println(dataIn, DEC);  
-  delay(1);
+  delay(10);
   digitalWrite(CS,HIGH);
   
   Serial.println();  
