@@ -7,6 +7,8 @@ carries information about the desired angle as shown in the image below:
 
 ![RC servo signal image](http://bansky.net/blog_stuff/images/servo_pulse_width.png)
 
+Image credit: [Arduino Forum Post](http://forum.arduino.cc/index.php/topic,14146.0.html)
+
 This module accepts an 8-bit input (0 through 255) which linearly maps to a 
 duty cycle value from 0 to 100%. As with the image above, 0 maps to a 0.5 [ms] 
 wide pulse, and 255 maps to a 2.5 [ms] pulse. 
