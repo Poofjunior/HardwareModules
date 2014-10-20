@@ -1,7 +1,7 @@
 /**
- * multi-PWM
+ * multi-ServoPWM
  * Joshua Vasquez
- * October 16, 2014
+ * October 19, 2014
  */
 
 module digitalIC( input logic clk,
@@ -37,36 +37,37 @@ module digitalIC( input logic clk,
 								.pwmDat5(dat[5]),
 								.pwmDat6(dat[6]),
 								.pwmDat7(dat[7]));
-								
-    pwm pwmInst0(.dutyCycleLookup(dat[0]), 
+		
+    ServoPWM pwmInst0(.dutyCycle(dat[0][7:0]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[0]));
 					 
-    pwm pwmInst1(.dutyCycleLookup(dat[1]), 
+					 
+    ServoPWM pwmInst1(.dutyCycle(dat[1]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[1]));
 					 
-    pwm pwmInst2(.dutyCycleLookup(dat[2]), 
+    ServoPWM pwmInst2(.dutyCycle(dat[2]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[2]));
 					 
-    pwm pwmInst3(.dutyCycleLookup(dat[3]), 
+    ServoPWM pwmInst3(.dutyCycle(dat[3]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[3]));
 					 
-    pwm pwmInst4(.dutyCycleLookup(dat[4]), 
+    ServoPWM pwmInst4(.dutyCycle(dat[4]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[4]));
 
-    pwm pwmInst5(.dutyCycleLookup(dat[5]), 
+    ServoPWM pwmInst5(.dutyCycle(dat[5]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[5]));
 					 
-    pwm pwmInst6(.dutyCycleLookup(dat[6]), 
+    ServoPWM pwmInst6(.dutyCycle(dat[6]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[6]));
 					 
-    pwm pwmInst7(.dutyCycleLookup(dat[7]), 
+    ServoPWM pwmInst7(.dutyCycle(dat[7]), 
 					 .clk(clk),
 					 .pwmOut(LEDsOut[7]));
 endmodule
