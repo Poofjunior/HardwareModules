@@ -4,7 +4,7 @@
  * October 19, 2014
  */
 
-module digitalIC( input logic clk,
+module ServoExtender( input logic clk,
                   input logic cs, sck, mosi, 
                   output logic miso,
                   output logic [7:0] LEDsOut); 
