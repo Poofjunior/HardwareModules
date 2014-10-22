@@ -4,6 +4,12 @@
  * September 26 - October 8, 2014
  */
 
+/**
+ * \brief an spi slave module that both receives input values and clocks out
+ *        output values according to SPI Mode0.
+ * \details note that the dataToSend input is sampled whenever the setNewData
+ *          signal is asserted.
+ */
 module spiSendReceive( input logic cs, sck, mosi, setNewData,
             input logic [7:0] dataToSend, 
             output logic miso,
@@ -54,7 +60,15 @@ endmodule
 
 
 
-
+/**
+ * \brief handles when data should be loaded into the spi module and parses
+ *        the first byte received for both the starting address and 
+ *        the read/write bit. Starting address is output on the addressOut 
+ *        signal. If a write is being signaled by the master, 
+ *        the dataCtrl module also asserts the writeEnable signal. Finally,
+ *        the setNewData signal prevents new dat from being written to the
+ *        spi output while data is being sent. 
+ */
 module dataCtrl(input logic cs, sck, 
                 input logic [7:0]spiDataIn,
                 output logic writeEnable,
@@ -67,7 +81,6 @@ module dataCtrl(input logic cs, sck,
     logic andOut;	// somewhat unecessary intermediate wire name.
     assign andOut = bitCount[2] & bitCount[1] & bitCount[0];
 
-   
 /// byteOut logic:   
       always_ff @ (posedge sck, posedge cs)
     begin
@@ -121,36 +134,33 @@ module dataCtrl(input logic cs, sck,
     always_ff @ (posedge byteOutNegEdge, posedge cs)
     begin
         if (cs)
-		      lockBaseAddress <= 1'b0;
-		  else
-		  lockBaseAddress <= 1'b1;
+            lockBaseAddress <= 1'b0;
+        else
+            lockBaseAddress <= 1'b1;
     end
-		
-															
+
   logic byteOutCtrl;
   assign byteOutCtrl = byteOut & ~lockBaseAddress;
  
 /// addressOut logic, setup for writeEnable logic: 
   always_ff @ (posedge byteOutNegEdge, posedge byteOutCtrl)
   begin
-      if (byteOutCtrl)
-		begin
-			addressOut<= spiDataIn[6:0];
-			writeEnableIn<= spiDataIn[7];
-		end
-		else
-			addressOut <= addressOut + 8'b0000001;
+    if (byteOutCtrl)
+    begin
+        addressOut<= spiDataIn[6:0];
+        writeEnableIn<= spiDataIn[7];
+    end
+    else
+        addressOut <= addressOut + 8'b0000001;
   end
   
  /// writeEnable logic:
  always_ff @ (posedge byteOutNegEdge, posedge cs)
  begin
     if (cs)
-	     writeEnable <= 1'b0;
+        writeEnable <= 1'b0;
     else
-	     writeEnable <= writeEnableIn;
+        writeEnable <= writeEnableIn;
  end
   
 endmodule
-
-
