@@ -8,7 +8,7 @@ digital logic.
 ![Encoder Waveform](http://joshuavasquez.com/docs/assets/img/Tutorials/OpticalRotaryEncoderTheory/waveformCropped.png)
 
 ### Synthesized Output
-[Quadrature encoder hardware](https://raw.githubusercontent.com/Poofjunior/HardwareModules/master/QuadratureEncoder/QuadratureEncoderSynthesizedOutput.png)
+![Quadrature encoder hardware](https://raw.githubusercontent.com/Poofjunior/HardwareModules/master/QuadratureEncoder/QuadratureEncoderSynthesizedOutput.png)
 
 Note: The version of Quartus II that I'm using displays constants in the RTL 
 viewer in (left-to-right) least-significant bit to most significant bit. 
