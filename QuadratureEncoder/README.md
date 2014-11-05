@@ -2,7 +2,7 @@ ServoPWM
 ========
 
 Quadrature Rotary Encoders output a grey coded waveform when spun. This pattern
-can be easily decrypted by a four-state finite-state machine implemented in 
+can be decrypted by a four-state finite-state machine implemented in 
 digital logic.
 
 ![Encoder Waveform](http://joshuavasquez.com/docs/assets/img/Tutorials/OpticalRotaryEncoderTheory/waveformCropped.png)
