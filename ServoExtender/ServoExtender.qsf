@@ -60,7 +60,7 @@ set_location_assignment PIN_F3 -to LEDsOut[5]
 set_location_assignment PIN_D1 -to LEDsOut[4]
 set_location_assignment PIN_A11 -to LEDsOut[3]
 set_location_assignment PIN_B13 -to LEDsOut[2]
-set_location_assignment PIN_A13 -to LEDsOut[1]
+set_location_assignment PIN_D12 -to LEDsOut[1]
 set_location_assignment PIN_B12 -to LEDsOut[0]
 set_location_assignment PIN_C3 -to cs
 set_location_assignment PIN_B4 -to mosi

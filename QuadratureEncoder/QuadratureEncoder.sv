@@ -11,14 +11,16 @@
 module QuadratureEncoder( input logic clk, sigA, sigB,
                   output logic [31:0] encoderCount); 
 
-    typedef enum logic [1:0] {S0, S1, S2, S3} stateType;
+    // Note that states correspond with the encoder's grey code, NOT binary.
+    typedef enum logic [1:0] {S0 = 2'b00, 
+                              S1 = 2'b01, 
+                              S2 = 2'b11, 
+                              S3 = 2'b10} stateType;
 
     stateType prevState, state, nextState;
     
     always_ff @ (posedge clk)
     begin
-        //nextState <= stateType'({sigA, sigB});
-        //state <= nextState;
         state <= stateType'({sigA, sigB});
         prevState <= state;
     
