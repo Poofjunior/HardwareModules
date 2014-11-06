@@ -10,7 +10,7 @@ To access the encoder data with a microcontroller, perform an spi transmission
 in the following form:
     
     Master writes cs low.
-    Master writes starting reg 0x00 to access the beg
+    Master writes starting reg 0x00 to access the beginning of the data.
     Master reads four bytes and assembles to form a 32-bit int. (encoderA)
     Master reads four more bytes and assembles to form a 32-bit int. (encoderB)
     Master writes cs high.
