@@ -19,7 +19,7 @@ void setup() {
   pinMode(CS, OUTPUT);
   digitalWrite(CS, HIGH);
   SPI.begin();
-  SPI.setClockDivider(255);  // Input up to 255 to slow down SPI clock speed.
+  //SPI.setClockDivider(255);  // optional arg up to 255 to slow down SPI clock speed.
   SPI.setDataMode(SPI_MODE0);
   
   Serial.begin(115200);
