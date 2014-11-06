@@ -1,7 +1,7 @@
 /**
- * SPI test sketch for the SPI slave module
+ * pollEncoders.ino
  * \author Joshua Vasquez
- * \date September 2014
+ * \date November 2014
  */
 
 /**
@@ -17,7 +17,6 @@
 
 void setup() {
   pinMode(CS, OUTPUT);
-  
   digitalWrite(CS, HIGH);
   SPI.begin();
   SPI.setClockDivider(255);  // Input up to 255 to slow down SPI clock speed.
@@ -29,26 +28,27 @@ void setup() {
 
 void loop() {
   // Perform an 8-bit Transfer:
-  Serial.println("Enter the reg to read from:");
-  while(!Serial.available());
-  unsigned char dataToTransfer = Serial.read() - 48;
-  Serial.print("You entered: ");
-  Serial.println(dataToTransfer);
-  
-  if (dataToTransfer <= 127)
-  {
+    int32_t encoderA = 0;  
+    int32_t encoderB = 0;  
+
     // Begin Read:
     digitalWrite(CS, LOW);
-    delay(1);  // TODO: remove this later.
-    unsigned char dataIn = SPI.transfer(0x07);
-    delay(1);
-    digitalWrite(CS,HIGH);
-  
-    Serial.print("Data read from reg: ");
-    //Serial.print(dataToTransfer);
-    Serial.print(" is: ");
-    Serial.println(dataIn, DEC);
+
+    SPI.transfer(0x00); // Transfer starting register.
+    
+    for (uint8_t i = 0; i < 4; ++i)
+        encoderA = (encoderA  << 8) | SPI.transfer(0xff);
+
+    for (uint8_t j = 0; j < 4; ++j)
+        encoderB = (encoderB  << 8) | SPI.transfer(0xff);
+
+    digitalWrite(CS, HIGH); // End SPI transfer.
+
+    Serial.print("encoderA: ");  
+    Serial.println(encoderA);  
+    Serial.print("encoderB: ");  
+    Serial.println(encoderB);  
     Serial.println();  
-  }
+    delay(100);
 }
 

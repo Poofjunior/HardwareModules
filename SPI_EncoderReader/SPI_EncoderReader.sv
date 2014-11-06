@@ -1,5 +1,5 @@
 /**
- * multi-ServoPWM
+ * SPI_EncoderReader
  * Joshua Vasquez
  * November 5, 2014
  */
@@ -7,15 +7,18 @@
 module SPI_EncoderReader( input logic clk,
                           input logic enc0A, enc0B, enc1A, enc1B,
                           input logic cs, sck, mosi, 
-                          output logic miso); 
+                          output logic miso,
+                          output logic [7:0] LEDsOut); 
 
     logic setNewData;
     logic writeEnable;
-    logic SPI_DataToSend;
+    logic [7:0] SPI_DataToSend;
 
     logic [7:0] dataReceived;
     logic [7:0] addressOut;
     logic [31:0] encoderData[0:1];
+
+    assign LEDsOut [7:0] = encoderData[0][7:0];
  
     QuadratureEncoder encA( .clk(clk), .sigA(enc0A), .sigB(enc0B),
                             .encoderCount(encoderData[0]));
@@ -56,14 +59,14 @@ module mem( input logic freezeData, clk,
     // clocked out while it isn't changing
     always_ff @ (posedge clk)
     begin
-        mem[0] <= freezeData ? mem[0] : encoderDataA[7:0];
-        mem[1] <= freezeData ? mem[1] : encoderDataA[15:8];
-        mem[2] <= freezeData ? mem[2] : encoderDataA[23:16];
-        mem[3] <= freezeData ? mem[3] : encoderDataA[31:24];
-        mem[4] <= freezeData ? mem[4] : encoderDataB[7:0];
-        mem[5] <= freezeData ? mem[5] : encoderDataB[15:8];
-        mem[6] <= freezeData ? mem[6] : encoderDataB[23:16];
-        mem[7] <= freezeData ? mem[7] : encoderDataB[31:24];
+        mem[0] <= freezeData ? mem[0] : encoderDataA[31:24];
+        mem[1] <= freezeData ? mem[1] : encoderDataA[23:16];
+        mem[2] <= freezeData ? mem[2] : encoderDataA[15:8];
+        mem[3] <= freezeData ? mem[3] : encoderDataA[7:0];
+        mem[4] <= freezeData ? mem[4] : encoderDataB[31:24];
+        mem[5] <= freezeData ? mem[5] : encoderDataB[23:16];
+        mem[6] <= freezeData ? mem[6] : encoderDataB[15:8];
+        mem[7] <= freezeData ? mem[7] : encoderDataB[7:0];
     end
 
     // Implement reading from memory.
