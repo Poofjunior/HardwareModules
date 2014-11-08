@@ -5,26 +5,37 @@
  * \date October 19, 2014
  */
 
-module demux( input logic dataIn
-                 input logic [3:0] select,
-                output logic [7:0] dataOut);
+module demux( input logic dataIn,
+              input logic [2:0] select,
+             output logic [7:0] dataOut);
 
     logic [7:0] busSelect;
-    case (sel)
-        4'b0000: busSelect = 8'b00000000; 
-        4'b0001: busSelect = 8'b00000001; 
-        4'b0010: busSelect = 8'b00000010; 
-        4'b0011: busSelect = 8'b00000100; 
-        4'b0100: busSelect = 8'b00001000; 
-        4'b0101: busSelect = 8'b00010000; 
-        4'b0110: busSelect = 8'b00100000; 
-        4'b0111: busSelect = 8'b01000000; 
-        4'b1000: busSelect = 8'b10000000; 
-    endcase
+	 
+    assign busSelect[0] = (~select[2]) & (~select[1]) & (~select[0]); // 3'b000
+    assign busSelect[1] = (~select[2]) & (~select[1]) & select[0];  // 3'b001
+    assign busSelect[2] = (~select[2]) & select[1] & (~select[0]);  // 3'b010
+    assign busSelect[3] = (~select[2]) & select[1] & select[0]; 
+    assign busSelect[4] = select[2] & (~select[1]) & (~select[0]); 
+    assign busSelect[5] = select[2] & (~select[1]) & select[0]; 
+    assign busSelect[6] = select[2] & select[1] & (~select[0]); 
+    assign busSelect[7] = select[2] & select[1] & select[0]; 
 
-    for (...)
-    assign dataOut[i] = busOut[i] ? dataIn:
-                                    1'bz;
+    assign dataOut[0] = busSelect[0] ? dataIn:
+                                    1'b1;
+    assign dataOut[1] = busSelect[1] ? dataIn:
+                                    1'b1;
+    assign dataOut[2] = busSelect[2] ? dataIn:
+                                    1'b1;
+    assign dataOut[3] = busSelect[3] ? dataIn:
+                                    1'b1;
+    assign dataOut[4] = busSelect[4] ? dataIn:
+                                    1'b1;
+    assign dataOut[5] = busSelect[5] ? dataIn:
+                                    1'b1;
+    assign dataOut[6] = busSelect[6] ? dataIn:
+                                    1'b1;
+    assign dataOut[7] = busSelect[7] ? dataIn:
+                                    1'b1;
 endmodule
 
 
