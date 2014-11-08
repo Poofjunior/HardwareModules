@@ -2,7 +2,7 @@
  * An open-drain demultiplexer ideal for interfacing with multiple i2c devices 
  *      with the same device address.
  * \author Joshua Vasquez
- * \date October 19, 2014
+ * \date November 7, 2014
  */
 
 module demux( input logic dataIn,
