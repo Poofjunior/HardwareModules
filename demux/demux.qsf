@@ -41,7 +41,7 @@ set_global_assignment -name DEVICE EP4CE22F17C6
 set_global_assignment -name TOP_LEVEL_ENTITY demux
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 13.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "13:14:58  SEPTEMBER 28, 2014"
-set_global_assignment -name LAST_QUARTUS_VERSION 13.1
+set_global_assignment -name LAST_QUARTUS_VERSION 14.0
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
@@ -58,12 +58,12 @@ set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
 set_global_assignment -name CDF_FILE Chain2.cdf
 
 
-set_location_assignment PIN_T13 -to select[0]
-set_location_assignment PIN_T15 -to select[1]
-set_location_assignment PIN_F13 -to select[2]
-set_location_assignment PIN_A15 -to dataOut[0]
-set_location_assignment PIN_A13 -to dataOut[1]
-set_location_assignment PIN_B13 -to dataOut[2]
+set_location_assignment PIN_P14 -to select[0]
+set_location_assignment PIN_N14 -to select[1]
+set_location_assignment PIN_L13 -to select[2]
+set_location_assignment PIN_J13 -to dataOut[0]
+set_location_assignment PIN_J16 -to dataOut[1]
+set_location_assignment PIN_M10 -to dataOut[2]
 set_location_assignment PIN_K15 -to dataIn
 set_location_assignment PIN_A11 -to dataOut[3]
 set_location_assignment PIN_D1 -to dataOut[4]

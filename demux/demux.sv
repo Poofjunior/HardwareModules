@@ -20,22 +20,22 @@ module demux( input logic dataIn,
     assign busSelect[6] = select[2] & select[1] & (~select[0]); 
     assign busSelect[7] = select[2] & select[1] & select[0]; 
 
-    assign dataOut[0] = busSelect[0] ? dataIn:
-                                    1'b1;
-    assign dataOut[1] = busSelect[1] ? dataIn:
-                                    1'b1;
-    assign dataOut[2] = busSelect[2] ? dataIn:
-                                    1'b1;
-    assign dataOut[3] = busSelect[3] ? dataIn:
-                                    1'b1;
-    assign dataOut[4] = busSelect[4] ? dataIn:
-                                    1'b1;
-    assign dataOut[5] = busSelect[5] ? dataIn:
-                                    1'b1;
-    assign dataOut[6] = busSelect[6] ? dataIn:
-                                    1'b1;
-    assign dataOut[7] = busSelect[7] ? dataIn:
-                                    1'b1;
+    assign dataOut[0] = (busSelect[0] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[1] = (busSelect[1] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[2] = (busSelect[2] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[3] = (busSelect[3] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[4] = (busSelect[4] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[5] = (busSelect[5] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[6] = (busSelect[6] & ~dataIn) ? 1'b0:
+                                       1'bz;
+    assign dataOut[7] = (busSelect[7] & ~dataIn)? 1'b0:
+                                       1'bz;
 endmodule
 
 
