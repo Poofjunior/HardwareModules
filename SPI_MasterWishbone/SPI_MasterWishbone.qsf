@@ -54,15 +54,6 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
-set_location_assignment PIN_L3 -to LEDsOut[7]
-set_location_assignment PIN_B1 -to LEDsOut[6]
-set_location_assignment PIN_F3 -to LEDsOut[5]
-set_location_assignment PIN_D1 -to LEDsOut[4]
-set_location_assignment PIN_A11 -to LEDsOut[3]
-set_location_assignment PIN_B13 -to LEDsOut[2]
-set_location_assignment PIN_D12 -to LEDsOut[1]
-set_location_assignment PIN_B12 -to LEDsOut[0]
-set_location_assignment PIN_C3 -to cs
 set_location_assignment PIN_B4 -to mosi
 set_location_assignment PIN_B5 -to sck
 set_location_assignment PIN_A3 -to miso
@@ -70,9 +61,25 @@ set_location_assignment PIN_A3 -to miso
 
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_location_assignment PIN_R8 -to clk
 set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
 set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
 
 
+set_location_assignment PIN_L3 -to DAT_O[7]
+set_location_assignment PIN_B1 -to DAT_O[6]
+set_location_assignment PIN_F3 -to DAT_O[5]
+set_location_assignment PIN_D1 -to DAT_O[4]
+set_location_assignment PIN_A11 -to DAT_O[3]
+set_location_assignment PIN_B13 -to DAT_O[2]
+set_location_assignment PIN_D12 -to DAT_O[1]
+set_location_assignment PIN_B12 -to DAT_O[0]
+set_location_assignment PIN_R8 -to CLK_I
+set_location_assignment PIN_J14 -to DAT_I[7]
+set_location_assignment PIN_K15 -to DAT_I[6]
+set_location_assignment PIN_L13 -to DAT_I[5]
+set_location_assignment PIN_N14 -to DAT_I[4]
+set_location_assignment PIN_P14 -to DAT_I[3]
+set_location_assignment PIN_N16 -to DAT_I[2]
+set_location_assignment PIN_P16 -to DAT_I[1]
+set_location_assignment PIN_L15 -to DAT_I[0]
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
