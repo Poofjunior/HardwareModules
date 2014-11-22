@@ -1,7 +1,7 @@
 /**
  * SPI_MasterWishbone
  * Joshua Vasquez
- * November 16, 2014
+ * November 21, 2014
  */
 
 
@@ -9,12 +9,13 @@
  * \note more cs signals may be added with small changes to the wishboneCtrl
  *       module
  */
-module SPI_MasterWishbone( input logic CLK_I, WE_I, STB_I, RST_I, miso,
+module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3)
+                         ( input logic CLK_I, WE_I, STB_I, RST_I, miso,
                            input logic [7:0] ADR_I,
                            input logic [7:0] DAT_I,
                           output logic ACK_O, RTY_O,
                           output logic [7:0] DAT_O,
-                          output logic [127:0] chipSelects,
+                          output logic [NUM_CHIP_SELECTS - 1:0] chipSelects,
                           output logic mosi, sck);
 
     logic setNewData;
@@ -27,7 +28,8 @@ module SPI_MasterWishbone( input logic CLK_I, WE_I, STB_I, RST_I, miso,
 
     assign DAT_O = dataReceived;
 
-    wishboneCtrl wishboneCtrlInst(.CLK_I(CLK_I), .WE_I(WE_I), .STB_I(STB_I),
+    wishboneCtrl #(.NUM_CHIP_SELECTS (NUM_CHIP_SELECTS)) wishboneCtrlInst(
+                                  .CLK_I(CLK_I), .WE_I(WE_I), .STB_I(STB_I),
                                   .RST_I(RST_I), .ADR_I(ADR_I), .DAT_I(DAT_I),
                                   .spiIdle(setNewData),
                                   .sck(sck),
@@ -48,15 +50,17 @@ module SPI_MasterWishbone( input logic CLK_I, WE_I, STB_I, RST_I, miso,
 endmodule
 
 
-module wishboneCtrl( input logic CLK_I, WE_I, STB_I, RST_I,
-                     input logic [7:0] ADR_I,
-                     input logic [7:0] DAT_I, 
-                     input logic spiIdle,
-                    output logic sck,
-                    output logic [127:0] chipSelects, 
-                    output logic [7:0] spiDataToSend, 
-                    output logic ACK_O,
-                    output logic RTY_O);
+module wishboneCtrl #(NUM_CHIP_SELECTS = 8)
+                    ( input logic CLK_I, WE_I, STB_I, RST_I,
+                      input logic [7:0] ADR_I,
+                      input logic [7:0] DAT_I, 
+                      input logic spiIdle,
+                     output logic sck,
+                     output logic [NUM_CHIP_SELECTS-1:0] chipSelects, 
+                     output logic [7:0] spiDataToSend, 
+                     output logic ACK_O,
+                     output logic RTY_O);
+
 
     logic clkDiv, slowClk;
     assign clkDivider = 8'b00000100;
@@ -89,12 +93,33 @@ module wishboneCtrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                 sendData;
     end
 
+
+/**
+ * \brief chipSelects logic
+ */
+    always_ff @ (posedge CLK_I)
+    begin
+        if (RST_I)
+            // CS should default to high
+            chipSelects <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; 
+        else
+        begin
+        /// preprocessor macro
+            chipSelects[ADR_I[$clog2(NUM_CHIP_SELECTS)-1:0]] <= 
+                                (state == STANDBY) ? 
+                                            1'b0 : 
+                                            state;
+        end
+    end
+
+
+/**
+ * \brief state machine logic
+ */
     always_ff @ (posedge CLK_I)
     begin
         if (RST_I)
         begin   
-            // CS should default to high
-            chipSelects <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; 
             sck <= 1'b0; 
             spiDataToSend <= 8'b00000000;
             ACK_O <= 1'b0;
@@ -120,42 +145,6 @@ module wishboneCtrl( input logic CLK_I, WE_I, STB_I, RST_I,
             endcase
         end
     end
-/*
-    always_ff @ (posedge CLK_I)
-    begin
-        if (RST_I)
-        begin   
-            // CS should default to high
-            chipSelects <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; 
-            sck <= 1'b0; 
-            spiDataToSend <= 8'b00000000;
-            ACK_O <= 1'b0;
-            RTY_O <= 1'b0;
-            state <= STANDBY;
-        end
-        else 
-        begin
-            state <= nextState;
-            
-            sck <= (state == TRANSMITTING) ? 
-                        slowClk :
-                        1'b0;
-
-            case (state)
-                STANDBY: nextState <= (STB_I & WE_I) ?
-                                        ONE_CLK_DELAY :
-                                        STANDBY;
-                ONE_CLK_DELAY:  nextState <= (sendData) ?
-                                             TRANSMITTING:
-                                             STANDBY;
-                TRANSMITTING:   nextState <= (spiIdle)?
-                                                ONE_CLK_DELAY :
-                                                TRANSMITTING;
-            endcase
-        end
-    end
-*/
-        
 
 endmodule
 
