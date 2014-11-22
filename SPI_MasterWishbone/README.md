@@ -43,4 +43,5 @@ of the new address will be brought low.
 ![Detailed View](https://raw.githubusercontent.com/Poofjunior/HardwareModules/master/SPI_MasterWishbone/SPI_MasterWishboneSynthesizedOutputDetail.png)
 
 ## Tweakable internal parameters
-* **clkDivider**: the clock divider signal. default is 4.
+* **SPI_CLK_DIV**: the clock divider signal. default is 4.
+* **NUM_CHIP_SELECTS**: the clock divider signal. default is 4.
