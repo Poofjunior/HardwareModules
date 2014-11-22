@@ -68,6 +68,7 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
 
     logic slowClk, lastClk;
     logic [ADDRESS_WIDTH - 1:0] stashedAddr;
+    logic CSHOLD;
 
     clkDiv clkDivInst( .clk(CLK_I), .reset(RST_I),
                        .divInput(SPI_CLK_DIV), .slowClk(slowClk));
@@ -92,14 +93,14 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
             /// transmitting. When transmission is done, CS should go high
             /// if the chipSelect address has changed since it started OR
             /// if if the CSHOLD bit is released.
-            chipSelects[stashedAddr[ADDRESS_WIDTH-2:0]] <= 
+            chipSelects[stashedAddr[ADDRESS_WIDTH-1:0]] <= 
                 (state == ONE_CLK_DELAY) ?
                     1'b0:
-                    ((state == DONE) & ((~stashedAddr[ADDRESS_WIDTH-1]) | 
-                                        (ADR_I[ADDRESS_WIDTH-2:0] != 
-                                         stashedAddr[ADDRESS_WIDTH-2:0])))?
+                    ((state == DONE) & ((~CSHOLD) | 
+                                        (ADR_I[ADDRESS_WIDTH-1:0] != 
+                                         stashedAddr[ADDRESS_WIDTH-1:0])))?
                                     1'b1 : 
-                                    chipSelects[ADR_I[ADDRESS_WIDTH-2:0]];
+                                    chipSelects[ADR_I[ADDRESS_WIDTH-1:0]];
         end
     end
 
@@ -119,6 +120,11 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
         end
         else 
         begin
+            ACK_O <= ((state == STANDBY) | (state == ONE_CLK_DELAY))? 
+                        (WE_I & STB_I) ? 
+                            1'b1:
+                            ACK_O :
+                        1'b0;
             sck <= (state == TRANSMITTING) ? 
                         slowClk :
                         1'b0;
@@ -129,10 +135,13 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
                             slowClk:
                             lastClk;
 
-        /// FIXME ?
             stashedAddr <= (state == STANDBY) ?
                             ADR_I:
                             stashedAddr;
+
+            CSHOLD <= (state == STANDBY) ?
+                            ADR_I[7]:
+                            CSHOLD;
 
             case (state)
                 STANDBY: state <= (STB_I & WE_I) ?
