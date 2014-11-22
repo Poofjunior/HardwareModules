@@ -5,7 +5,7 @@ SPI Master Wishbone
 
 ## Overview
 This module is a wishbone-compatible SPI Master. Single Transfers and multiple
-transfers are supported.
+transfers are supported. [Wishbone Standards documented here](http://cdn.opencores.org/downloads/wbspec_b3.pdf)
 
 Up to 128 devices are supported with individual chip-selects. This limit is 
 imposed by the wishbone 8-bit address space. Additional chip-selects are 
