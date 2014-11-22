@@ -1,4 +1,4 @@
-ServoPWM
+QuadratureEncoder
 ========
 
 Quadrature Rotary Encoders output a grey coded waveform when spun. This pattern
