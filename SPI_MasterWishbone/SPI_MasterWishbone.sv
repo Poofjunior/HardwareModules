@@ -66,34 +66,16 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
     /// macro for the right-size decoder using "ceiling log2" function:
     parameter ADDRESS_WIDTH = $clog2(NUM_CHIP_SELECTS);
 
-    logic slowClk;
-    logic sendData;
+    logic slowClk, lastClk;
+    logic [ADDRESS_WIDTH - 1:0] stashedAddr;
 
     clkDiv clkDivInst( .clk(CLK_I), .reset(RST_I),
                        .divInput(SPI_CLK_DIV), .slowClk(slowClk));
 
-    typedef enum logic [1:0] {STANDBY, ONE_CLK_DELAY, TRANSMITTING} stateType;
+    typedef enum logic [1:0] {STANDBY, ONE_CLK_DELAY, TRANSMITTING, DONE} 
+                              stateType;
 
     stateType state, nextState;
-
-/**
- * \brief sendData logic. sendData sets at the start of a wishbone transmission
- *        and clears when the spi bus starts transmitting.
- * \details if STB_I and WE_I are asserted when FSM is ready, sendData is 
- *          asserted.
- */
-    always_ff @ (posedge CLK_I)
-    begin
-        if (RST_I)
-            sendData <= 1'b0;
-        else
-            sendData <= (STB_I & WE_I & 
-                         ((state == STANDBY) | (state == ONE_CLK_DELAY))) ? 
-                            1'b1 :
-                            (state == TRANSMITTING) ? 
-                                1'b0:
-                                sendData;
-    end
 
 
 /**
@@ -106,11 +88,18 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
             chipSelects[ADDRESS_WIDTH - 1: 0] <= 1'b1;
         else
         begin
-            // Either keep the same value 
-            chipSelects[ADR_I[ADDRESS_WIDTH - 1:0]] <= 
-                                (state == STANDBY) ? 
-                                    1'b0 : 
-                                    chipSelects[ADR_I[ADDRESS_WIDTH - 1:0]];
+            /// chipSelect should go low at ONE_CLK_DELAY and stay low while
+            /// transmitting. When transmission is done, CS should go high
+            /// if the chipSelect address has changed since it started OR
+            /// if if the CSHOLD bit is released.
+            chipSelects[stashedAddr[ADDRESS_WIDTH-2:0]] <= 
+                (state == ONE_CLK_DELAY) ?
+                    1'b0:
+                    ((state == DONE) & ((~stashedAddr[ADDRESS_WIDTH-1]) | 
+                                        (ADR_I[ADDRESS_WIDTH-2:0] != 
+                                         stashedAddr[ADDRESS_WIDTH-2:0])))?
+                                    1'b1 : 
+                                    chipSelects[ADR_I[ADDRESS_WIDTH-2:0]];
         end
     end
 
@@ -133,18 +122,29 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
             sck <= (state == TRANSMITTING) ? 
                         slowClk :
                         1'b0;
-            RTY_O <= (state == STANDBY); 
+            // "device is busy" signal.
+            RTY_O <= (state == TRANSMITTING); 
+
+            lastClk <= ((state == STANDBY) | (state == DONE)) ?
+                            slowClk:
+                            lastClk;
+
+        /// FIXME ?
+            stashedAddr <= (state == STANDBY) ?
+                            ADR_I:
+                            stashedAddr;
 
             case (state)
                 STANDBY: state <= (STB_I & WE_I) ?
                                         ONE_CLK_DELAY :
                                         STANDBY;
-                ONE_CLK_DELAY:  state <= (sendData) ?
+                ONE_CLK_DELAY:  state <= (lastClk != slowClk) ?
                                              TRANSMITTING:
                                              STANDBY;
                 TRANSMITTING:   state <= (spiIdle)?
-                                                ONE_CLK_DELAY :
+                                                DONE:
                                                 TRANSMITTING;
+                DONE: state <= STANDBY;
             endcase
         end
     end
