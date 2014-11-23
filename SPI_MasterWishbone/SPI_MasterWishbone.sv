@@ -64,11 +64,13 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
                      output logic RTY_O);
 
     /// macro for the right-size decoder using "ceiling log2" function:
-    parameter ADDRESS_WIDTH = $clog2(NUM_CHIP_SELECTS);
+    parameter ADDRESS_WIDTH = $clog2(NUM_CHIP_SELECTS + 1);
 
     logic slowClk, lastClk;
     logic [ADDRESS_WIDTH - 1:0] stashedAddr;
     logic CSHOLD;
+
+    assign spiDataToSend = DAT_I[7:0];
 
     clkDiv clkDivInst( .clk(CLK_I), .reset(RST_I),
                        .divInput(SPI_CLK_DIV), .slowClk(slowClk));
@@ -85,8 +87,19 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
     always_ff @ (posedge CLK_I)
     begin
         if (RST_I)
+        begin
             // All chipSelect pins should default to high
-            chipSelects[ADDRESS_WIDTH - 1: 0] <= 1'b1;
+            integer i;
+            for (i = 0; i < NUM_CHIP_SELECTS; i = i + 1)
+            begin
+                chipSelects[i] <= 1'b1;
+            end
+            /*
+                chipSelects[2] <= 1'b1;
+                chipSelects[1] <= 1'b1;
+                chipSelects[0] <= 1'b1;
+             */
+        end
         else
         begin
             /// chipSelect should go low at ONE_CLK_DELAY and stay low while
@@ -113,10 +126,10 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
         if (RST_I)
         begin   
             sck <= 1'b0; 
-            spiDataToSend <= 8'b00000000;
             ACK_O <= 1'b0;
             RTY_O <= 1'b0;
             state <= STANDBY;
+            stashedAddr[ADDRESS_WIDTH-1:0] <= 'b0;
         end
         else 
         begin
