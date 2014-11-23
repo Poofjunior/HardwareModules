@@ -148,7 +148,7 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
             RTY_O <= (state != STANDBY); 
 
             stashedAddr <= (state == STANDBY) ?
-                            ADR_I:
+                            ADR_I[ADDRESS_WIDTH-1:0] :
                             stashedAddr;
 
             /// Capture CSHOLD value while in standby state.
