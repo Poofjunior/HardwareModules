@@ -20,12 +20,8 @@ module spiSendReceive( input logic cs, sck, serialDataIn, setNewData,
             output logic [7:0] dataReceived);
 
     logic [7:0] shiftReg;
-    logic validClk;
   
-    assign validClk = cs ? 1'b0   :
-                           sck;
-    
-    always_ff @ (negedge validClk, posedge setNewData)
+    always_ff @ (negedge cs, posedge setNewData)
     begin
         if (setNewData)
         begin
@@ -45,7 +41,7 @@ module spiSendReceive( input logic cs, sck, serialDataIn, setNewData,
         end
     end
     
-    always_ff @ (posedge validClk)
+    always_ff @ (posedge cs)
     begin
         // Handle Input.
             dataReceived[0] <= serialDataIn;

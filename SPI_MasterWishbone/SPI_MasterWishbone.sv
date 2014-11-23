@@ -20,10 +20,14 @@ module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
 
     logic setNewData;
     logic writeEnable;
+    logic csSummary;
 
     logic [7:0] dataReceived;
     logic [7:0] dataToSend;
     logic [7:0] clkDiv;
+    
+    /// Simulates behavior of a single chip-select input 
+    assign csSummary = &chipSelects;
 
 
     assign DAT_O = dataReceived;
@@ -40,11 +44,12 @@ module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
                                   .ACK_O(ACK_O), .RTY_O(RTY_O));
 
  
-    dataCtrl dataCtrlInst(.cs(cs), .sck(sck), .writeEnable(writeEnable),
+/// TODO: 
+    dataCtrl dataCtrlInst(.cs(csSummary), .sck(sck), .writeEnable(writeEnable),
                           .spiDataIn( ),
                           .setNewData(setNewData), .addressOut( ));
 
-    spiSendReceive spiInst(.cs(cs), .sck(slowClk), .serialDataIn(miso), 
+    spiSendReceive spiInst(.cs(cs), .sck(sck), .serialDataIn(miso), 
                     .setNewData(setNewData),
                     .dataToSend(dataToSend), .serialDataOut(mosi), 
                     .dataReceived(dataReceived));  
@@ -52,7 +57,7 @@ module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
 endmodule
 
 
-module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
+module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
                     ( input logic CLK_I, WE_I, STB_I, RST_I,
                       input logic [7:0] ADR_I,
                       input logic [7:0] DAT_I, 
@@ -65,6 +70,8 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 8, SPI_CLK_DIV = 4)
 
     /// macro for the right-size decoder using "ceiling log2" function:
     parameter ADDRESS_WIDTH = $clog2(NUM_CHIP_SELECTS + 1);
+    /// note: this value is slightly bigger in some cases where the number of
+    //        chip selects is a power of 2.
 
     logic slowClk, lastClk;
     logic [ADDRESS_WIDTH - 1:0] stashedAddr;
