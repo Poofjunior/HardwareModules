@@ -1,7 +1,7 @@
 /**
  * SPI_MasterWishbone
  * Joshua Vasquez
- * November 21, 2014
+ * November 23, 2014
  */
 
 
@@ -9,7 +9,7 @@
  * \note more cs signals may be added with small changes to the wishboneCtrl
  *       module
  */
-module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
+module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 8)
                          ( input logic CLK_I, WE_I, STB_I, RST_I, miso,
                            input logic [7:0] ADR_I,
                            input logic [7:0] DAT_I,
@@ -19,16 +19,14 @@ module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
                           output logic mosi, sck);
 
     logic setNewData;
-    logic writeEnable;
     logic csSummary;
 
     logic [7:0] dataReceived;
     logic [7:0] dataToSend;
     logic [7:0] clkDiv;
     
-    /// Simulates behavior of a single chip-select input 
+    /// Determines when single chip-select is being used from chipSelects
     assign csSummary = &chipSelects;
-
 
     assign DAT_O = dataReceived;
 
@@ -44,16 +42,13 @@ module SPI_MasterWishbone #(NUM_CHIP_SELECTS = 3, SPI_CLK_DIV = 4)
                                   .ACK_O(ACK_O), .RTY_O(RTY_O));
 
  
-/// TODO: 
-    dataCtrl dataCtrlInst(.cs(csSummary), .sck(sck), .writeEnable(writeEnable),
-                          .spiDataIn( ),
-                          .setNewData(setNewData), .addressOut( ));
+    dataCtrl dataCtrlInst(.cs(csSummary), .sck(sck),
+                          .setNewData(setNewData) );
 
-    spiSendReceive spiInst(.cs(cs), .sck(sck), .serialDataIn(miso), 
+    spiSendReceive spiInst(.sck(sck), .serialDataIn(miso), 
                     .setNewData(setNewData),
                     .dataToSend(dataToSend), .serialDataOut(mosi), 
                     .dataReceived(dataReceived));  
-
 endmodule
 
 
@@ -70,22 +65,24 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
 
     /// macro for the right-size decoder using "ceiling log2" function:
     parameter ADDRESS_WIDTH = $clog2(NUM_CHIP_SELECTS + 1);
-    /// note: this value is slightly bigger in some cases where the number of
-    //        chip selects is a power of 2.
+    /// note: this value is slightly bigger (by one bit) in some cases where 
+    //  the number of chip selects is a power of 2.
+    
+    logic slowClkCtrl;  /// held HIGH when slowClk module should be enabled
 
-    logic slowClk, lastClk;
+    logic slowClk;
     logic [ADDRESS_WIDTH - 1:0] stashedAddr;
     logic CSHOLD;
 
     assign spiDataToSend = DAT_I[7:0];
 
-    clkDiv clkDivInst( .clk(CLK_I), .reset(RST_I),
+    clkDiv clkDivInst( .clk(CLK_I), .reset(slowClkCtrl),
                        .divInput(SPI_CLK_DIV), .slowClk(slowClk));
 
     typedef enum logic [1:0] {STANDBY, ONE_CLK_DELAY, TRANSMITTING, DONE} 
                               stateType;
 
-    stateType state, nextState;
+    stateType state;
 
 
 /**
@@ -101,11 +98,6 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
             begin
                 chipSelects[i] <= 1'b1;
             end
-            /*
-                chipSelects[2] <= 1'b1;
-                chipSelects[1] <= 1'b1;
-                chipSelects[0] <= 1'b1;
-             */
         end
         else
         begin
@@ -140,6 +132,8 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
         end
         else 
         begin
+            // ACKnowledge (WEI_I & STB_I) while in the STANDBY and 
+            // ONE_CLK_DELAY state. 
             ACK_O <= ((state == STANDBY) | (state == ONE_CLK_DELAY))? 
                         (WE_I & STB_I) ? 
                             1'b1:
@@ -148,32 +142,34 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
             sck <= (state == TRANSMITTING) ? 
                         slowClk :
                         1'b0;
-            // "device is busy" signal.
-            RTY_O <= (state == TRANSMITTING); 
 
-            lastClk <= ((state == STANDBY) | (state == DONE)) ?
-                            slowClk:
-                            lastClk;
+            // Assert "device is busy" signal when data must be transmitted 
+            // over SPI bus.
+            RTY_O <= (state != STANDBY); 
 
             stashedAddr <= (state == STANDBY) ?
                             ADR_I:
                             stashedAddr;
 
+            /// Capture CSHOLD value while in standby state.
             CSHOLD <= (state == STANDBY) ?
                             ADR_I[7]:
                             CSHOLD;
 
+            slowClkCtrl <= (state == STANDBY) | (state == DONE);
+
+            /// State-Transition Logic:
             case (state)
                 STANDBY: state <= (STB_I & WE_I) ?
                                         ONE_CLK_DELAY :
                                         STANDBY;
-                ONE_CLK_DELAY:  state <= (lastClk != slowClk) ?
-                                             TRANSMITTING:
-                                             STANDBY;
+                ONE_CLK_DELAY:  state <=    (slowClk) ?
+                                            TRANSMITTING:    
+                                            ONE_CLK_DELAY;
                 TRANSMITTING:   state <= (spiIdle)?
                                                 DONE:
                                                 TRANSMITTING;
-                DONE: state <= STANDBY;
+                DONE: state <= STANDBY; ///TODO: remove this state if possible.
             endcase
         end
     end
@@ -186,7 +182,7 @@ module clkDiv( input logic clk, reset,
                input logic [7:0] divInput,      // clock divisor
               output logic slowClk);
 
-    logic [7:0] divisor;
+    logic [7:0] divisor;    /// divisor (aka: divInput) should never be 0.
     logic countMatch;
     logic [7:0] count;
 
@@ -194,30 +190,25 @@ module clkDiv( input logic clk, reset,
 
     always_ff @ (posedge clk)
     begin
-        if (reset)
-            divisor <= 8'b00000001;
-        //else if (enable)
-        else
-            divisor <= divInput;
+        divisor <= divInput;
     end
     
     always_ff @ (posedge clk)
     begin
         if (reset | countMatch )  // count reset must be synchronous.
             count <= 8'b00000000;
-        //else if (enable)
         else
             count <= count + 8'b00000001;
     end
 
     always_ff @ (posedge clk)
+    if (reset)
+            slowClk <= 'b0;
+    else
     begin
-        //if (enable)
-        //begin
             slowClk <= (countMatch) ? 
                             ~slowClk : 
                             slowClk;
-        //end
     end
 
 endmodule

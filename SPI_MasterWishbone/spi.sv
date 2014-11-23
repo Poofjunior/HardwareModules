@@ -14,14 +14,14 @@
  *        module from being constrained to master or slave-specific naming
  *        conventions.
  */
-module spiSendReceive( input logic cs, sck, serialDataIn, setNewData,
+module spiSendReceive( input logic sck, serialDataIn, setNewData,
             input logic [7:0] dataToSend, 
             output logic serialDataOut,
             output logic [7:0] dataReceived);
 
     logic [7:0] shiftReg;
   
-    always_ff @ (negedge cs, posedge setNewData)
+    always_ff @ (negedge sck, posedge setNewData)
     begin
         if (setNewData)
         begin
@@ -41,7 +41,7 @@ module spiSendReceive( input logic cs, sck, serialDataIn, setNewData,
         end
     end
     
-    always_ff @ (posedge cs)
+    always_ff @ (posedge sck)
     begin
         // Handle Input.
             dataReceived[0] <= serialDataIn;
@@ -61,19 +61,10 @@ endmodule
 
 
 /**
- * \brief handles when data should be loaded into the spi module and parses
- *        the first byte received for both the starting address and 
- *        the read/write bit. Starting address is output on the addressOut 
- *        signal. If a write is being signaled by the master, 
- *        the dataCtrl module also asserts the writeEnable signal. Finally,
- *        the setNewData signal prevents new dat from being written to the
- *        spi output while data is being sent. 
+ * \brief handles when data should be loaded into the spi module 
  */
 module dataCtrl(input logic cs, sck, 
-                input logic [7:0]spiDataIn,
-                output logic writeEnable,
-                output logic setNewData,
-                output logic [7:0] addressOut);
+                output logic setNewData);
 
     logic [10:0] bitCount;
     logic byteOut;
@@ -96,7 +87,7 @@ module dataCtrl(input logic cs, sck,
         end
     end
 
-/// byteOutNegEdge logic: 
+/// byteOutNegEdge and setNewData logic: 
     always_ff @ (negedge sck, posedge cs)
     begin
         if (cs)
@@ -114,6 +105,7 @@ module dataCtrl(input logic cs, sck,
     end
 
 
+/*
     logic lockBaseAddress;
     logic writeEnableIn;
     logic [7:0] offset;
@@ -162,5 +154,6 @@ module dataCtrl(input logic cs, sck,
     else
         writeEnable <= writeEnableIn;
  end
+*/
   
 endmodule
