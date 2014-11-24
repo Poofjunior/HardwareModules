@@ -70,7 +70,11 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
     
     logic slowClkCtrl;  /// held HIGH when slowClk module should be enabled
 
-    logic slowClk;
+    logic slowClk;  /// the SCK signal for SPI.
+
+/// for detecting when SPI bus becomes busy
+    logic lastSPI_IdleCheck, currSPI_IdleCheck; 
+
     logic [ADDRESS_WIDTH - 1:0] stashedAddr;
     logic CSHOLD;
 
@@ -124,14 +128,16 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
     begin
         if (RST_I)
         begin   
-            sck <= 1'b0; 
-            ACK_O <= 1'b0;
-            RTY_O <= 1'b0;
             state <= STANDBY;
-            stashedAddr[ADDRESS_WIDTH-1:0] <= 'b0;
+            lastSPI_IdleCheck <= 'b0;
+            currSPI_IdleCheck <= 'b0;
         end
         else 
         begin
+
+            lastSPI_IdleCheck <= currSPI_IdleCheck;
+            currSPI_IdleCheck <= slowClk;
+
             // ACKnowledge (WEI_I & STB_I) while in the STANDBY and 
             // ONE_CLK_DELAY state. 
             ACK_O <= ((state == STANDBY) | (state == ONE_CLK_DELAY))? 
@@ -139,7 +145,9 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
                             1'b1:
                             ACK_O :
                         1'b0;
-            sck <= (state == TRANSMITTING) ? 
+
+            /// output SCK signal whenever not in the standby state. 
+            sck <= (state != STANDBY) | (state != DONE) ? 
                         slowClk :
                         1'b0;
 
@@ -163,7 +171,9 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
                 STANDBY: state <= (STB_I & WE_I) ?
                                         ONE_CLK_DELAY :
                                         STANDBY;
-                ONE_CLK_DELAY:  state <=    (slowClk) ?
+                /// Detect start of SPI transmission:
+                ONE_CLK_DELAY:  state <=
+                                    (~lastSPI_IdleCheck & currSPI_IdleCheck) ?
                                             TRANSMITTING:    
                                             ONE_CLK_DELAY;
                 TRANSMITTING:   state <= (spiIdle)?
