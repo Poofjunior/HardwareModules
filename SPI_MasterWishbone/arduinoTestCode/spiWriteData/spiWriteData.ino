@@ -2,6 +2,11 @@
  * spiWriteData.ino
  * Joshua Vasquez
  * November 22, 2014
+ *
+ * \note Standard digitalWrite commands limit the maximum SPI transfer rate to
+ *       SPI_CLK_DIV = 8 on the FPGA side. The (DUE) Arduino's WE_O and STB_O
+ *       output signals take TOO LONG to bring low again after they are 
+ *       asserted.
  */
 
 #define STB_O 16
@@ -38,31 +43,34 @@ void setup()
 
 void loop()
 {
-    int transferComplete = 0;
+    int FPGA_Busy;
 
     digitalWrite(WE_O, LOW);
     digitalWrite(STB_O, LOW);
     resetSPI_Wishbone();
+
+/// Write the Chip-select pin and assert the CSHOLD bit.
     writeParallel(addrPins, 0x80);
 
-    for (uint8_t i = 0; i < 10; ++i)
+    for (uint8_t i = 0; i < 100; ++i)
     {
-        writeParallel(dataOutPins, i);
-
-// signal end-of-transfer before sending the last value.
-        if (i == 9)
+        // signal end-of-transfer before sending the last value.
+        if (i == 99)
             writeParallel(addrPins, 0x00);
+
+        /// Load the data to be sent.
+        writeParallel(dataOutPins, i);
 
         initTransfer();
 /*
+        /// Wait until FPGA is ready to receive more data.
         do {
-            transferComplete = digitalRead(ACK_I); 
+            FPGA_Busy = digitalRead(RTY_I); 
         }
-        while(!transferComplete);
+        while(FPGA_Busy);
 */
-        delayMicroseconds(2);
+
     }
-    
 }
 
 
