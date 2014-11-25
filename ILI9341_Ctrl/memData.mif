@@ -1,0 +1,109 @@
+WIDTH=8;
+DEPTH=32;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+	00  :   CF; -- Power Control B
+	01  :   00;
+	02  :   C1;
+	03  :   30;
+
+    04  :   ED; --Power On Sequence Control
+    05  :   64;
+    06  :   03;
+    07  :   12;
+    08  :   81;
+
+    09  :   E8; -- Driver Timing Control A
+    0A  :   85;
+    0B  :   00;
+    0C  :   78;
+
+    0D  :   CB; -- Power Control A
+    0E  :   39;
+    0F  :   2C;
+    10  :   00;
+    11  :   34;
+    12  :   02;
+
+    13  :   F7; -- Pump Ratio Control (datasheet pg 202)
+    14  :   20; 
+
+    15  :   EA;
+    16  :   00;
+    17  :   00;
+    
+    18  :   C0; -- Power control
+    19  :   23;
+
+    1A  :   C1; -- Power control 
+    1B  :   10;
+
+    1C  :   C5; -- VCM Control
+    1D  :   3E;
+    1E  :   28;
+
+    1F  :   C7; -- VCM Control
+    20  :   86;
+
+    21  :   36; -- Memory Access Control
+    22  :   48;
+
+    23  :   3A; -- Pixel Format
+    24  :   55;
+
+    25  :   B1; -- Frame Control 1
+    26  :   00;
+    27  :   18;
+
+    28  :   B6; -- DFUNCTR (?)
+    29  :   08;
+    30  :   82;
+    32  :   27;
+
+    33  :   F2; -- 3Gamma Function Disable
+    34  :   00; 
+
+    35  :   26; -- Gamma Curve Selected
+    36  :   01;
+
+    37  :   E0; -- Gamma
+    38  :   0F;
+    39  :   31;
+    3A  :   2B;
+    3B  :   0C;
+    3C  :   0E;
+    3D  :   08;
+    3E  :   4E;
+    3F  :   F1;
+    40  :   37;
+    41  :   07;
+    42  :   10;
+    43  :   03;
+    44  :   0E;
+    45  :   09;
+    46  :   00;
+
+    47  :   E1; -- GMCTRN1  (?)
+    48  :   00;
+    49  :   0E;
+    4A  :   14;
+    4B  :   03;
+    4C  :   11;
+    4D  :   07;
+    4E  :   31;
+    4F  :   C1;
+    50  :   48;
+    51  :   08;
+    52  :   0F;
+    53  :   0C;
+    54  :   31;
+    55  :   36;
+    56  :   0F;
+
+    57  :   11; -- Exit sleep
+    
+    58  :   29; -- display on
+END;
