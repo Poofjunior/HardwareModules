@@ -14,10 +14,11 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                      input logic [7:0] DAT_I,
                     output logic ACK_O, RTY_O,
                     output logic [7:0] DAT_O,
-                    output logic tftChipSelect, tftMosi, tftSck);
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset);
 
-    parameter TOTAL_INIT_PARAMS = 89;
+    parameter LAST_INIT_PARAM_ADDR = 89;
     parameter MS_120 = 6000000;
+    parameter MS_FOR_RESET = 10000000;
 
     logic [23:0] delayTicks;
     logic delayOff;
@@ -36,7 +37,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
     logic spiAck;
     logic [7:0] spiChipSelect;
     logic [7:0] spiDataToSend;
-    SPI_MasterWisbhone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(4))
+    SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(4))
                 SPI_MasterWishboneInst( .CLK_I(CLK_I), .WE_I(spiWriteEnable),
                                         .STB_I(spiStrobe), .RST_I(RST_I),
                                         .miso(), .ADR_I(spiChipSelect),
@@ -44,39 +45,66 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                         .ACK_O(spiAck),
                                         .RTY_O(spiBusy), .DAT_O(), 
                                         .chipSelects(tftChipSelect),
-                                        .mosi(tftMosi), .tftSck(sck));
+                                        .mosi(tftMosi), .sck(tftSck));
                                         
 
-    typedef enum logic [1:0] {INIT, SEND_INIT_PARAMS, SEND_DATA} stateType;
+    typedef enum logic [2:0] {INIT, HOLD_RESET, SEND_INIT_PARAMS, WAIT_TO_SEND,
+                              SEND_DATA} 
+                             stateType;
+    stateType state;
 
-    always_ff @ (posedge clk)
+    always_ff @ (posedge CLK_I)
     begin
-        if (reset)
+        if (RST_I)
+        begin
             state <= INIT;
             initParamAddr <= 'b0;
             delayTicks <= 'b0;
+            tftReset <= 'b1;
+        end
         else if (delayOff) 
         begin
             case (state)
                 INIT: 
                 begin
-                    spiDataToSend <= initParamAddr;
+                    /// set address 0 and no CSHOLD
+                    spiChipSelect <= 'h0;   
+                    /// load starting byte of SPI data. 
+                    spiDataToSend <= initParamData;
+
+                    tftReset <=  'b0;   // pull reset low to trigger.
+                    delayTicks <= MS_FOR_RESET;
+                    state <= HOLD_RESET;
+                end
+                HOLD_RESET:
+                begin
+                    tftReset <=  'b1;   // pull reset up again to release.
+                    delayTicks <= MS_120;   // wait additional 120 ms.
                     state <= SEND_INIT_PARAMS;
-                    spiChipSelect <= 'h0;   /// address 0 and no CSHOLD
                 end
                 SEND_INIT_PARAMS:        
                 begin
                     if (~spiBusy)
                     begin
+                        // Enable WE_I and STB_I signals.
                         spiStrobe <= 'b1; 
                         spiWriteEnable <= 'b1; 
-                        initParamCount <= initParamCount + 'b1; // TODO: this works here?
-                        initParamAddress <= initParamAddress + 'b1;
+
                         state <= SEND_INIT_PARAMS;
                     end
                     else
                     begin
-                        stae <= (initParamCount > TOTAL_INIT_PARAMS) ?
+                        // Pull down WE_I and STB_I signals.
+                        spiStrobe <= 'b0;
+                        spiWriteEnable <= 'b0;
+
+                        // Load next byte of SPI data. 
+                        spiDataToSend <= initParamData;
+
+                        // Increment to next initParam address
+                        initParamAddr <= initParamAddr + 'b1;
+
+                        state <= (initParamAddr > LAST_INIT_PARAM_ADDR) ?
                                     WAIT_TO_SEND:
                                     SEND_INIT_PARAMS; 
                     end
@@ -88,6 +116,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_DATA:        
                     state <= SEND_DATA;
+            endcase
         end
         else
             delayTicks <= delayTicks - 'b1;
@@ -96,7 +125,7 @@ endmodule
 
 
 module initParams(  input logic [6:0] memAddress,
-                   output logic [7:0] memData)
+                   output logic [7:0] memData);
 
     (* ram_init_file = "memData.mif" *) logic [7:0] mem [0:88];
     assign memData = mem[memAddress];
