@@ -1,0 +1,22 @@
+WIDTH=8;
+DEPTH=11;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+	00  :   2A; -- 
+	01  :   00;
+	02  :   00;
+	03  :   00;
+
+	04  :   EF;
+	05  :   2B;
+	06  :   00;
+	07  :   00;
+    08  :   01;
+
+    09  :   3F;
+    0A  :   2C;
+    
+END;

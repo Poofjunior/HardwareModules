@@ -1,7 +1,7 @@
 /**
  * ILI9341_Ctrl
  * Joshua Vasquez
- * November 23, 2014
+ * November 23 - 30, 2014
  */
 
 
@@ -17,8 +17,14 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     output logic tftChipSelect, tftMosi, tftSck, tftReset);
 
     parameter LAST_INIT_PARAM_ADDR = 85;
+    parameter LAST_PIX_LOC_ADDR = 85;
+    parameter LAST_PIX_DATA_ADDR = 85;
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
+
+    parameter ROWS_ = 320;
+    parameter COLS_ = 240;
+
 
     logic [24:0] delayTicks;
     logic delayOff;
@@ -26,13 +32,22 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
 
     logic dataSent; // indicates when to load new data onto SPI bus.
 
-    logic [6:0] initParamAddr;
-    logic [6:0] pixelLocAddr;
+    logic [17:0] memAddr;
+    logic [6:0] lastAddr;
+
     logic [7:0] initParamData;
+    logic [7:0] pixelLocData;
+    logic [7:0] pixelData;
+
+    logic resetMemAddr;
 
 
-    initParams initParamsInst(.memAddress(initParamAddr),
+    initParams initParamsInst(.memAddress(memAddr[6:0]),
                               .memData(initParamData));
+    pixelLocParams pixelLocParamsInst(.memAddress(memAddr[6:0]),
+                              .memData(pixelLocData));
+    pixelData pixelDataInst(.memAddress(memAddr),
+                              .memData(pixelData));
 
     logic spiWriteEnable;
     logic spiStrobe;
@@ -40,7 +55,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
     logic spiAck;
     logic [7:0] spiChipSelect;
     logic [7:0] spiDataToSend;
-    SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(1))
+    logic [7:0] memVal;
+
+    SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(0))
                 SPI_MasterWishboneInst( .CLK_I(CLK_I), .WE_I(spiWriteEnable),
                                         .STB_I(spiStrobe), .RST_I(RST_I),
                                         .miso(), .ADR_I(spiChipSelect),
@@ -60,16 +77,32 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                              stateType;
     stateType state;
 
+
+    always_ff @ (posedge CLK_I)
+    begin
+        if (RST_I)
+        begin
+            resetMemAddr <= 'b1;
+        end
+        else 
+        begin
+            resetMemAddr <= ((state == SEND_INIT_PARAMS) & 
+                                (memAddr[6:0] == lastAddr)) |
+                            ((state == SEND_PIXEL_LOC) & 
+                                (memAddr[6:0] == lastAddr)) |
+                            ((state == SEND_DATA) &
+                                (memAddr == lastAddr));
+        end
+    end
+
+
     always_ff @ (posedge CLK_I)
     begin
         if (RST_I)
         begin
             state <= INIT;
-            initParamAddr <= 'b0;
-            pixelLocAddr <= 'b0;
             delayTicks <= 'b0;
             tftReset <= 'b1;
-            dataSent <= 'b0;    // don't skip first value to send.
         end
         else if (delayOff) 
         begin
@@ -79,7 +112,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     /// set address 0 and no CSHOLD
                     spiChipSelect <= 'h0;   
                     /// load starting byte of SPI data. 
-                    spiDataToSend <= initParamData;
+                    memVal <= initParamData;
 
                     tftReset <=  'b0;   // pull reset low to trigger.
                     delayTicks <= MS_FOR_RESET;
@@ -93,125 +126,84 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_INIT_PARAMS:        
                 begin
-                    if (~spiBusy)
-                    begin
-                        // Enable WE_I and STB_I signals.
-                        spiStrobe <= 'b1; 
-                        spiWriteEnable <= 'b1; 
-
-                        // Load next byte of SPI data. 
-                        spiDataToSend <= initParamData;
-
-                        dataSent <= 'b1;
-
-                        state <= SEND_INIT_PARAMS;
-                    end
-                    else
-                    begin
-                        // Pull down WE_I and STB_I signals.
-                        spiStrobe <= 'b0;
-                        spiWriteEnable <= 'b0;
-
-
-                        // Increment to next initParam address once.
-                        initParamAddr <= (dataSent) ? 
-                                            initParamAddr + 'b1:
-                                            initParamAddr;
-                        dataSent <= 'b0;
-
-                        state <= (initParamAddr > LAST_INIT_PARAM_ADDR) ?
-                                    WAIT_TO_SEND:
-                                    SEND_INIT_PARAMS; 
-                    end
+                    memVal <= initParamData;
+                    lastAddr <= LAST_INIT_PARAM_ADDR;
+                    state <= (memAddr[6:0] == lastAddr) ?
+                                WAIT_TO_SEND :
+                                SEND_INIT_PARAMS;
                 end
                 WAIT_TO_SEND:
                 begin
                     delayTicks <= MS_120;
-                    state <= SEND_DATA;
+                    state <= SEND_PIXEL_LOC;
                 end
                 SEND_PIXEL_LOC:        
-                    state <= SEND_DATA;
-/*
                 begin
-                    /// set address 0 and no CSHOLD
-                    spiChipSelect <= 'h0;   
-                    if (~spiBusy)
-                    begin
-                        // Enable WE_I and STB_I signals.
-                        spiStrobe <= 'b1; 
-                        spiWriteEnable <= 'b1; 
-
-                        // 
-                        dataSent <= 'b1;
-
-                        state <= SEND_PIXEL_LOC;
-                    end
-                    else
-                    begin
-                        // Pull down WE_I and STB_I signals.
-                        spiStrobe <= 'b0;
-                        spiWriteEnable <= 'b0;
-
-                        // Load next byte of SPI data. 
-                        spiDataToSend <= pixelLocData;
-
-                        // Increment to next initParam address once.
-                        initParamAddr <= (dataSent) ? 
-                                            pixelLocAddr + 'b1:
-                                            pixelLocAddr;
-                        dataSent <= 'b0;
-
-                        state <= (pixelLocAddr > LAST_PIXEL_LOC_ADDR) ?
-                                    SEND_DATA:
-                                    SEND_PIXEL_LOC; 
-                    end
+                    memVal <= pixelLocData;
+                    lastAddr <= LAST_PIX_LOC_ADDR;
+                    state <= (memAddr[6:0] == lastAddr) ? 
+                                SEND_DATA :
+                                SEND_PIXEL_LOC;
                 end
-*/
                 SEND_DATA:        
-                    state <= SEND_DATA;
-/*
                 begin
-                    if (~spiBusy)
-                    begin
-                        /// set address 0 and assert CSHOLD
-                        spiChipSelect <= 'h80;   
-
-                        // Enable WE_I and STB_I signals.
-                        spiStrobe <= 'b1; 
-                        spiWriteEnable <= 'b1; 
-
-                        // 
-                        dataSent <= 'b1;
-
-                        state <= SEND_PIXEL_LOC;
-                    end
-                    else
-                    begin
-                        // Pull down WE_I and STB_I signals.
-                        spiStrobe <= 'b0;
-                        spiWriteEnable <= 'b0;
-
-                        // Load next byte of SPI data. 
-                        spiDataToSend <= screenData;
-
-                        // Increment to next initParam address once.
-                        initParamAddr <= (dataSent) ? 
-                                            screenDataAddr + 'b1:
-                                            screenDataAddr;
-                        dataSent <= 'b0;
-
-                        state <= (screenDataAddr > LAST_PIXEL_DATA_ADDR) ?
-                                    SEND_PIXEL_LOC:
-                                    SEND_DATA; 
-                    end
+                    memVal <= pixelData;
+                    lastAddr <= LAST_PIX_DATA_ADDR;
+                    state <= SEND_DATA;
                 end
-*/
             endcase
         end
         else
             delayTicks <= delayTicks - 'b1;
     end
+
+
+    always_ff @ (posedge CLK_I)
+    begin
+        if (RST_I | resetMemAddr | delayTicks)
+        begin
+            memAddr <= 'b0;
+            spiStrobe <= 'b0;
+            spiWriteEnable <= 'b0;
+            dataSent <= 'b0;
+        end
+        else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
+                 (state == SEND_DATA)) 
+        begin
+            if (~spiBusy)
+            begin
+                // Enable WE_I and STB_I signals.
+                spiStrobe <= 'b1; 
+                spiWriteEnable <= 'b1; 
+    
+                // Load next byte of SPI data. 
+                spiDataToSend <= memVal;
+    
+                dataSent <= 'b1;
+    
+            end
+            else
+            begin
+                // Pull down WE_I and STB_I signals.
+                spiStrobe <= 'b0;
+                spiWriteEnable <= 'b0;
+    
+                // Increment to next mem address once.
+                memAddr <= (dataSent) ? 
+                                    memAddr + 'b1:
+                                    memAddr;
+                dataSent <= 'b0;
+            end
+        end
+        else
+        begin
+            spiStrobe <= 'b0;
+            spiWriteEnable <= 'b0;
+            dataSent <= 'b0;
+        end
+    end
 endmodule
+
 
 
 module initParams(  input logic [6:0] memAddress,
@@ -223,3 +215,19 @@ module initParams(  input logic [6:0] memAddress,
 endmodule
 
 
+module pixelLocParams(  input logic [6:0] memAddress,
+                   output logic [7:0] memData);
+
+    (* ram_init_file = "pixelLocParams.mif" *) logic [7:0] mem [0:10];
+    assign memData = mem[memAddress];
+
+endmodule
+
+/// FIXME: memAddress should be larger than 
+module pixelData(  input logic [16:0] memAddress,
+                   output logic [7:0] memData);
+
+    (* ram_init_file = "pixelData.mif" *) logic [7:0] mem [0:76799];
+    assign memData = mem[memAddress];
+
+endmodule
