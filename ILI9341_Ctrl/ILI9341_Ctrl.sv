@@ -16,17 +16,18 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     output logic [7:0] DAT_O,
                     output logic tftChipSelect, tftMosi, tftSck, tftReset);
 
-    parameter LAST_INIT_PARAM_ADDR = 89;
-    parameter MS_120 = 6000000;
-    parameter MS_FOR_RESET = 10000000;
+    parameter LAST_INIT_PARAM_ADDR = 85;
+    parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
+    parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
 
-    logic [23:0] delayTicks;
+    logic [24:0] delayTicks;
     logic delayOff;
     assign delayOff = &(~delayTicks);
 
     logic dataSent; // indicates when to load new data onto SPI bus.
 
     logic [6:0] initParamAddr;
+    logic [6:0] pixelLocAddr;
     logic [7:0] initParamData;
 
 
@@ -39,13 +40,13 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
     logic spiAck;
     logic [7:0] spiChipSelect;
     logic [7:0] spiDataToSend;
-    SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(4))
+    SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(1))
                 SPI_MasterWishboneInst( .CLK_I(CLK_I), .WE_I(spiWriteEnable),
                                         .STB_I(spiStrobe), .RST_I(RST_I),
                                         .miso(), .ADR_I(spiChipSelect),
                                         .DAT_I(spiDataToSend),
                                         .ACK_O(spiAck),
-                                        .RTY_(spiBusy), .DAT_O(), 
+                                        .RTY_O(spiBusy), .DAT_O(), 
                                         .chipSelects(tftChipSelect),
                                         .mosi(tftMosi), .sck(tftSck));
                                         
@@ -68,6 +69,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             pixelLocAddr <= 'b0;
             delayTicks <= 'b0;
             tftReset <= 'b1;
+            dataSent <= 'b0;    // don't skip first value to send.
         end
         else if (delayOff) 
         begin
@@ -97,7 +99,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                         spiStrobe <= 'b1; 
                         spiWriteEnable <= 'b1; 
 
-                        // 
+                        // Load next byte of SPI data. 
+                        spiDataToSend <= initParamData;
+
                         dataSent <= 'b1;
 
                         state <= SEND_INIT_PARAMS;
@@ -108,11 +112,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                         spiStrobe <= 'b0;
                         spiWriteEnable <= 'b0;
 
-                        // Load next byte of SPI data. 
-                        spiDataToSend <= initParamData;
 
                         // Increment to next initParam address once.
-                        initParamAddr <= (dataSent ?) 
+                        initParamAddr <= (dataSent) ? 
                                             initParamAddr + 'b1:
                                             initParamAddr;
                         dataSent <= 'b0;
@@ -128,6 +130,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     state <= SEND_DATA;
                 end
                 SEND_PIXEL_LOC:        
+                    state <= SEND_DATA;
+/*
                 begin
                     /// set address 0 and no CSHOLD
                     spiChipSelect <= 'h0;   
@@ -152,7 +156,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                         spiDataToSend <= pixelLocData;
 
                         // Increment to next initParam address once.
-                        initParamAddr <= (dataSent ?) 
+                        initParamAddr <= (dataSent) ? 
                                             pixelLocAddr + 'b1:
                                             pixelLocAddr;
                         dataSent <= 'b0;
@@ -162,7 +166,10 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                     SEND_PIXEL_LOC; 
                     end
                 end
+*/
                 SEND_DATA:        
+                    state <= SEND_DATA;
+/*
                 begin
                     if (~spiBusy)
                     begin
@@ -188,7 +195,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                         spiDataToSend <= screenData;
 
                         // Increment to next initParam address once.
-                        initParamAddr <= (dataSent ?) 
+                        initParamAddr <= (dataSent) ? 
                                             screenDataAddr + 'b1:
                                             screenDataAddr;
                         dataSent <= 'b0;
@@ -198,6 +205,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                     SEND_DATA; 
                     end
                 end
+*/
             endcase
         end
         else

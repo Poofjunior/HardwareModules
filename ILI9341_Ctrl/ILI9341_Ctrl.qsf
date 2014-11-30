@@ -54,16 +54,11 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
-set_location_assignment PIN_E10 -to mosi
-set_location_assignment PIN_D9 -to sck
-set_location_assignment PIN_B11 -to miso
+set_location_assignment PIN_D9 -to miso
 
 
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name SYSTEMVERILOG_FILE ILI9341_Ctrl.sv
-set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
-set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
 
 
 set_location_assignment PIN_A15 -to DAT_O[7]
@@ -96,6 +91,12 @@ set_location_assignment PIN_F8 -to WE_I
 set_location_assignment PIN_D12 -to chipSelects[2]
 set_location_assignment PIN_D8 -to RST_I
 set_location_assignment PIN_B12 -to chipSelects[1]
-set_location_assignment PIN_D11 -to chipSelects[0]
 set_location_assignment PIN_E6 -to ACK_O
+
+set_global_assignment -name SYSTEMVERILOG_FILE ILI9341_Ctrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
+set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
+set_location_assignment PIN_E10 -to tftMosi
+set_location_assignment PIN_D11 -to tftChipSelect
+set_location_assignment PIN_D9 -to tftSck
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
