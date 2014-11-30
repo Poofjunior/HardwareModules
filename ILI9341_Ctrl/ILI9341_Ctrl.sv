@@ -16,9 +16,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     output logic [7:0] DAT_O,
                     output logic tftChipSelect, tftMosi, tftSck, tftReset);
 
-    parameter LAST_INIT_PARAM_ADDR = 85;
-    parameter LAST_PIX_LOC_ADDR = 85;
-    parameter LAST_PIX_DATA_ADDR = 85;
+    parameter LAST_INIT_PARAM_ADDR = 86;
+    parameter LAST_PIX_LOC_ADDR = 11;
+    parameter LAST_PIX_DATA_ADDR = 76800;
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
 
@@ -32,8 +32,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
 
     logic dataSent; // indicates when to load new data onto SPI bus.
 
-    logic [17:0] memAddr;
-    logic [6:0] lastAddr;
+    logic [16:0] memAddr;
+    logic [16:0] lastAddr;
 
     logic [7:0] initParamData;
     logic [7:0] pixelLocData;
@@ -86,12 +86,10 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
         end
         else 
         begin
-            resetMemAddr <= ((state == SEND_INIT_PARAMS) & 
-                                (memAddr[6:0] == lastAddr)) |
-                            ((state == SEND_PIXEL_LOC) & 
-                                (memAddr[6:0] == lastAddr)) |
-                            ((state == SEND_DATA) &
-                                (memAddr == lastAddr));
+            resetMemAddr <= (memAddr == lastAddr) & 
+                            ((state == SEND_INIT_PARAMS) | 
+                             (state == SEND_PIXEL_LOC) | 
+                             (state == SEND_DATA) ); 
         end
     end
 
@@ -103,6 +101,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             state <= INIT;
             delayTicks <= 'b0;
             tftReset <= 'b1;
+            lastAddr <= LAST_INIT_PARAM_ADDR;
         end
         else if (delayOff) 
         begin
@@ -128,7 +127,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 begin
                     memVal <= initParamData;
                     lastAddr <= LAST_INIT_PARAM_ADDR;
-                    state <= (memAddr[6:0] == lastAddr) ?
+                    state <= (memAddr == lastAddr) ?
                                 WAIT_TO_SEND :
                                 SEND_INIT_PARAMS;
                 end
@@ -141,7 +140,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 begin
                     memVal <= pixelLocData;
                     lastAddr <= LAST_PIX_LOC_ADDR;
-                    state <= (memAddr[6:0] == lastAddr) ? 
+                    state <= (memAddr == lastAddr) ? 
                                 SEND_DATA :
                                 SEND_PIXEL_LOC;
                 end
