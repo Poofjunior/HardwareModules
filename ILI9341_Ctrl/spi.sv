@@ -96,6 +96,8 @@ module dataCtrl(input logic cs, sck,
             byteOutNegEdge <= byteOut;
         end
 
+
+//        assign setNewData = byteOutNegEdge & ~sck;
     always_latch
     begin
         if (byteOutNegEdge)
@@ -104,56 +106,4 @@ module dataCtrl(input logic cs, sck,
         end
     end
 
-
-/*
-    logic lockBaseAddress;
-    logic writeEnableIn;
-    logic [7:0] offset;
-
-/// offset logic:
-    always_ff @ (posedge byteOut, posedge cs)
-    begin
-      if (cs)
-            offset <= -8'b00000001;
-        else
-            begin
-                offset <= offset + 8'b00000001;
-            end
-    end
-  
-
- /// lockBaseAddress logic: 
-    always_ff @ (posedge byteOutNegEdge, posedge cs)
-    begin
-        if (cs)
-            lockBaseAddress <= 1'b0;
-        else
-            lockBaseAddress <= 1'b1;
-    end
-
-  logic byteOutCtrl;
-  assign byteOutCtrl = byteOut & ~lockBaseAddress;
- 
-/// addressOut logic, setup for writeEnable logic: 
-  always_ff @ (posedge byteOutNegEdge, posedge byteOutCtrl)
-  begin
-    if (byteOutCtrl)
-    begin
-        addressOut<= spiDataIn[6:0];
-        writeEnableIn<= spiDataIn[7];
-    end
-    else
-        addressOut <= addressOut + 8'b0000001;
-  end
-  
- /// writeEnable logic:
- always_ff @ (posedge byteOutNegEdge, posedge cs)
- begin
-    if (cs)
-        writeEnable <= 1'b0;
-    else
-        writeEnable <= writeEnableIn;
- end
-*/
-  
 endmodule

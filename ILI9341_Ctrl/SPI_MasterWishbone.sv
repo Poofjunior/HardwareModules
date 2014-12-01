@@ -214,7 +214,7 @@ module clkDiv( input logic clk, reset,
             count <= count + 8'b00000001;
     end
 
-    always_ff @ (posedge clk)
+    always_ff @ (posedge clk, posedge reset)
     if (reset)
             slowClk <= 'b0;
     else
