@@ -71,10 +71,6 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                         .mosi(tftMosi), .sck(tftSck));
                                         
 
-/// TODO: implement two more RAMS: one for pixel-start transmissions, and one
-//        for actual pixel data.
-
-
     typedef enum logic [2:0] {INIT, HOLD_RESET, SEND_INIT_PARAMS, WAIT_TO_SEND,
                               SEND_PIXEL_LOC, SEND_DATA} 
                              stateType;
@@ -92,7 +88,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             resetMemAddr <= (memAddr == lastAddr) & 
                             ((state == SEND_INIT_PARAMS) | 
                              (state == SEND_PIXEL_LOC) | 
-                             (state == SEND_DATA) ); 
+                             (state == SEND_DATA));
         end
     end
 
@@ -132,7 +128,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     memVal <= initParamData[7:0];
                     dataOrCmd <= initParamData[8];
                     lastAddr <= LAST_INIT_PARAM_ADDR;
-                    state <= (memAddr == lastAddr) ?
+                    state <= (memAddr == LAST_INIT_PARAM_ADDR) ?
                                 WAIT_TO_SEND :
                                 SEND_INIT_PARAMS;
                 end
@@ -146,7 +142,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     memVal <= pixelLocData[7:0];
                     dataOrCmd <= pixelLocData[8];
                     lastAddr <= LAST_PIX_LOC_ADDR;
-                    state <= (memAddr == lastAddr) ? 
+                    state <= (memAddr == LAST_PIX_LOC_ADDR) ? 
                                 SEND_DATA :
                                 SEND_PIXEL_LOC;
                 end
@@ -155,7 +151,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     memVal <= pixelData;
                     dataOrCmd <= 'b0;
                     lastAddr <= LAST_PIX_DATA_ADDR;
-                    state <= SEND_DATA;
+                    state <= (memAddr == LAST_PIX_DATA_ADDR) ? 
+                                SEND_PIXEL_LOC:
+                                SEND_DATA;
                 end
             endcase
         end
