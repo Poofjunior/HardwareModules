@@ -14,7 +14,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                      input logic [7:0] DAT_I,
                     output logic ACK_O, RTY_O,
                     output logic [7:0] DAT_O,
-                    output logic tftChipSelect, tftMosi, tftSck, tftReset);
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset, 
+                                 dataCtrl);
 
     parameter LAST_INIT_PARAM_ADDR = 86;
     parameter LAST_PIX_LOC_ADDR = 11;
@@ -35,11 +36,13 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
     logic [16:0] memAddr;
     logic [16:0] lastAddr;
 
-    logic [7:0] initParamData;
-    logic [7:0] pixelLocData;
+    logic [8:0] initParamData;  // Bit 8 indicates command or data on SPI bus
+    logic [8:0] pixelLocData;
+
     logic [7:0] pixelData;
 
     logic resetMemAddr;
+    logic dataOrCmd;    // indicates whether byte on SPI bus is a cmd or data.
 
 
     initParams initParamsInst(.memAddress(memAddr[6:0]),
@@ -102,6 +105,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             delayTicks <= 'b0;
             tftReset <= 'b1;
             lastAddr <= LAST_INIT_PARAM_ADDR;
+            dataOrCmd <= 'b0;
         end
         else if (delayOff) 
         begin
@@ -111,8 +115,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                     /// set address 0 and no CSHOLD
                     spiChipSelect <= 'h0;   
                     /// load starting byte of SPI data. 
-                    memVal <= initParamData;
-
+                    memVal <= initParamData[7:0];
+                    dataOrCmd <= initParamData[8];
                     tftReset <=  'b0;   // pull reset low to trigger.
                     delayTicks <= MS_FOR_RESET;
                     state <= HOLD_RESET;
@@ -125,7 +129,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_INIT_PARAMS:        
                 begin
-                    memVal <= initParamData;
+                    memVal <= initParamData[7:0];
+                    dataOrCmd <= initParamData[8];
                     lastAddr <= LAST_INIT_PARAM_ADDR;
                     state <= (memAddr == lastAddr) ?
                                 WAIT_TO_SEND :
@@ -138,7 +143,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_PIXEL_LOC:        
                 begin
-                    memVal <= pixelLocData;
+                    memVal <= pixelLocData[7:0];
+                    dataOrCmd <= pixelLocData[8];
                     lastAddr <= LAST_PIX_LOC_ADDR;
                     state <= (memAddr == lastAddr) ? 
                                 SEND_DATA :
@@ -147,6 +153,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 SEND_DATA:        
                 begin
                     memVal <= pixelData;
+                    dataOrCmd <= 'b0;
                     lastAddr <= LAST_PIX_DATA_ADDR;
                     state <= SEND_DATA;
                 end
@@ -165,6 +172,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             spiStrobe <= 'b0;
             spiWriteEnable <= 'b0;
             dataSent <= 'b0;
+            dataCtrl <= 'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
                  (state == SEND_DATA)) 
@@ -179,7 +187,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 spiDataToSend <= memVal;
     
                 dataSent <= 'b1;
-    
+                
+                dataCtrl <= ~dataOrCmd;
             end
             else
             begin
@@ -206,18 +215,18 @@ endmodule
 
 
 module initParams(  input logic [6:0] memAddress,
-                   output logic [7:0] memData);
+                   output logic [8:0] memData);
 
-    (* ram_init_file = "memData.mif" *) logic [7:0] mem [0:88];
+    (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:88];
     assign memData = mem[memAddress];
 
 endmodule
 
 
 module pixelLocParams(  input logic [6:0] memAddress,
-                   output logic [7:0] memData);
+                   output logic [8:0] memData);
 
-    (* ram_init_file = "pixelLocParams.mif" *) logic [7:0] mem [0:10];
+    (* ram_init_file = "pixelLocParams.mif" *) logic [8:0] mem [0:10];
     assign memData = mem[memAddress];
 
 endmodule

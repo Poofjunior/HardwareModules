@@ -54,7 +54,6 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
-set_location_assignment PIN_D9 -to miso
 
 
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
@@ -89,14 +88,19 @@ set_location_assignment PIN_R16 -to ADR_I[0]
 set_location_assignment PIN_E9 -to STB_I
 set_location_assignment PIN_F8 -to WE_I
 set_location_assignment PIN_D12 -to chipSelects[2]
-set_location_assignment PIN_D8 -to RST_I
+set_location_assignment PIN_J15 -to RST_I
 set_location_assignment PIN_B12 -to chipSelects[1]
 set_location_assignment PIN_E6 -to ACK_O
 
-set_global_assignment -name SYSTEMVERILOG_FILE ILI9341_Ctrl.sv
-set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
-set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
 set_location_assignment PIN_E10 -to tftMosi
 set_location_assignment PIN_D11 -to tftChipSelect
 set_location_assignment PIN_D9 -to tftSck
+set_location_assignment PIN_A12 -to dataCtrl
+set_location_assignment PIN_C11 -to tftReset
+set_global_assignment -name MIF_FILE pixelLocParams.mif
+set_global_assignment -name MIF_FILE pixelData.mif
+set_global_assignment -name MIF_FILE memData.mif
+set_global_assignment -name SYSTEMVERILOG_FILE ILI9341_Ctrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
+set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

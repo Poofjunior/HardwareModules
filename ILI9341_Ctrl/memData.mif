@@ -1,113 +1,109 @@
-WIDTH=8;
+-- Copyright (C) 1991-2013 Altera Corporation
+-- Your use of Altera Corporation's design tools, logic functions 
+-- and other software and tools, and its AMPP partner logic 
+-- functions, and any output files from any of the foregoing 
+-- (including device programming or simulation files), and any 
+-- associated documentation or information are expressly subject 
+-- to the terms and conditions of the Altera Program License 
+-- Subscription Agreement, Altera MegaCore Function License 
+-- Agreement, or other applicable license agreement, including, 
+-- without limitation, that your use is for the sole purpose of 
+-- programming logic devices manufactured by Altera and sold by 
+-- Altera or its authorized distributors.  Please refer to the 
+-- applicable agreement for further details.
+
+-- Quartus II generated Memory Initialization File (.mif)
+
+WIDTH=9;
 DEPTH=86;
 
 ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
 
 CONTENT BEGIN
-	00  :   CF; -- Power Control B
-	01  :   00;
-	02  :   C1;
-	03  :   30;
-
-    04  :   ED; --Power On Sequence Control
-    05  :   64;
-    06  :   03;
-    07  :   12;
-    08  :   81;
-
-    09  :   E8; -- Driver Timing Control A
-    0A  :   85;
-    0B  :   00;
-    0C  :   78;
-
-    0D  :   CB; -- Power Control A
-    0E  :   39;
-    0F  :   2C;
-    10  :   00;
-    11  :   34;
-    12  :   02;
-
-    13  :   F7; -- Pump Ratio Control (datasheet pg 202)
-    14  :   20; 
-
-    15  :   EA;
-    16  :   00;
-    17  :   00;
-    
-    18  :   C0; -- Power control
-    19  :   23;
-
-    1A  :   C1; -- Power control 
-    1B  :   10;
-
-    1C  :   C5; -- VCM Control
-    1D  :   3E;
-    1E  :   28;
-
-    1F  :   C7; -- VCM Control
-    20  :   86;
-
-    21  :   36; -- Memory Access Control
-    22  :   48;
-
-    23  :   3A; -- Pixel Format
-    24  :   55;
-
-    25  :   B1; -- Frame Control 1
-    26  :   00;
-    27  :   18;
-
-    28  :   B6; -- DFUNCTR (?)
-    29  :   08;
-    2A  :   82;
-    2B  :   27;
-
-    2C  :   F2; -- 3Gamma Function Disable
-    2D  :   00;
-
-    2E  :   26; -- Gamma Curve Selected
-    2F  :   01;
-
-    30  :   E0;   
-    31  :   0F;
-    32  :   31;
-    33  :   2B;
-    34  :   E0; -- Gamma
-    35  :   0F;
-    36  :   31;
-    37  :   2B;
-    38  :   0C;
-    39  :   0E;
-    3A  :   08;
-    3B  :   4E;
-    3C  :   F1;
-    3D  :   37;
-    3E  :   07;
-    3F  :   10;
-    40  :   03;
-    41  :   0E;
-    42  :   09;
-    43  :   00;
-
-    44  :   E1; -- GMCTRN1  (?)
-    45  :   00;
-    46  :   0E;
-    47  :   14;
-    48  :   03;
-    49  :   11;
-    4A  :   07;
-    4B  :   31;
-    4C  :   C1;
-    4D  :   48;
-    4E  :   08;
-    4F  :   0F;
-    50  :   0C;
-    51  :   31;
-    52  :   36;
-    53  :   0F;
-
-    54  :   11; -- Exit sleep
-    
-    55  :   29; -- display on
+	00  :   1CF;
+	01  :   000;
+	02  :   0C1;
+	03  :   030;
+	04  :   1ED;
+	05  :   064;
+	06  :   003;
+	07  :   012;
+	08  :   081;
+	09  :   1E8;
+	0A  :   085;
+	0B  :   000;
+	0C  :   078;
+	0D  :   1CB;
+	0E  :   039;
+	0F  :   02C;
+	10  :   000;
+	11  :   034;
+	12  :   002;
+	13  :   1F7;
+	14  :   020;
+	15  :   1EA;
+	[16..17]  :   000;
+	18  :   1C0;
+	19  :   023;
+	1A  :   1C1;
+	1B  :   010;
+	1C  :   1C5;
+	1D  :   03E;
+	1E  :   028;
+	1F  :   1C7;
+	20  :   086;
+	21  :   136;
+	22  :   048;
+	23  :   13A;
+	24  :   055;
+	25  :   1B1;
+	26  :   000;
+	27  :   018;
+	28  :   1B6;
+	29  :   008;
+	2A  :   082;
+	2B  :   027;
+	2C  :   1F2;
+	2D  :   000;
+	2E  :   126;
+	2F  :   001;
+	30  :   1E0;
+	31  :   00F;
+	32  :   031;
+	33  :   02B;
+	34  :   1E0;
+	35  :   00F;
+	36  :   031;
+	37  :   02B;
+	38  :   00C;
+	39  :   00E;
+	3A  :   008;
+	3B  :   04E;
+	3C  :   0F1;
+	3D  :   037;
+	3E  :   007;
+	3F  :   010;
+	40  :   003;
+	41  :   00E;
+	42  :   009;
+	43  :   000;
+	44  :   1E1;
+	45  :   000;
+	46  :   00E;
+	47  :   014;
+	48  :   003;
+	49  :   011;
+	4A  :   007;
+	4B  :   031;
+	4C  :   0C1;
+	4D  :   048;
+	4E  :   008;
+	4F  :   00F;
+	50  :   00C;
+	51  :   031;
+	52  :   036;
+	53  :   00F;
+	54  :   111;
+	55  :   129;
 END;
