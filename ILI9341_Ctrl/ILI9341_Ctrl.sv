@@ -19,7 +19,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
 
     parameter LAST_INIT_PARAM_ADDR = 86;
     parameter LAST_PIX_LOC_ADDR = 11;
-    parameter LAST_PIX_DATA_ADDR = 76800;
+    //parameter LAST_PIX_DATA_ADDR = 76800;
+    parameter LAST_PIX_DATA_ADDR = 153600;
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
 
@@ -33,8 +34,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
 
     logic dataSent; // indicates when to load new data onto SPI bus.
 
-    logic [16:0] memAddr;
-    logic [16:0] lastAddr;
+    logic [17:0] memAddr;
+    logic [17:0] lastAddr;
 
     logic [8:0] initParamData;  // Bit 8 indicates command or data on SPI bus
     logic [8:0] pixelLocData;
@@ -148,6 +149,13 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_DATA:        
                 begin
+/*
+                    /// set address 0 and assert CSHOLD until last address
+                    spiChipSelect <= (memAddr < LAST_PIX_DATA_ADDR  - 1) ?
+                                        'h80:
+                                        'b0;   
+*/
+
                     memVal <= pixelData;
                     dataOrCmd <= 'b0;
                     lastAddr <= LAST_PIX_DATA_ADDR;
@@ -229,8 +237,7 @@ module pixelLocParams(  input logic [6:0] memAddress,
 
 endmodule
 
-/// FIXME: memAddress should be larger than 
-module pixelData(  input logic [16:0] memAddress,
+module pixelData(  input logic [17:0] memAddress,
                    output logic [7:0] memData);
 
     (* ram_init_file = "pixelData.mif" *) logic [7:0] mem [0:76799];
