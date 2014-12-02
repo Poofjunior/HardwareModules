@@ -1,15 +1,17 @@
 ILI9341_Ctrl
 ========
 ## Overview
-This module is a wishbone-compatible ILI9341 driver. 
+This module is an ILI9341 driver designed for easily dumping data to the 
+screen. 
+
+Currently, pixel data is stored in an internal block of ram, but this ram will
+eventually be moved outside the module and be a feature to be implemented by
+the user.
 
 TODO
 ====
-The Wishbone 8-bit address encodes the following information:
+Possibly make this module wishbone-compatible.
 
-|MSbit|bits[6:0]|
-|-----|---------|
-| ?? | ?? |
 
 
 
