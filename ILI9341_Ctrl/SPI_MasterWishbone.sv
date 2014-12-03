@@ -223,5 +223,4 @@ module clkDiv( input logic clk, reset,
                             ~slowClk : 
                             slowClk;
     end
-
 endmodule

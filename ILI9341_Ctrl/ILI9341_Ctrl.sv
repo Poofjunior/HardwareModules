@@ -1,7 +1,7 @@
 /**
  * ILI9341_Ctrl
  * Joshua Vasquez
- * November 23 - 30, 2014
+ * November 23 - December 3, 2014
  */
 
 
@@ -9,13 +9,33 @@
  * \note more cs signals may be added with small changes to the wishboneCtrl
  *       module
  */
-module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
-                     input logic [7:0] ADR_I,
-                     input logic [7:0] DAT_I,
-                    output logic ACK_O, RTY_O,
-                    output logic [7:0] DAT_O,
+
+module ILI9341_Ctrl( input logic CLK_I, RST_I, 
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset);
+
+    logic [15:0] pixelDataIn;   
+    logic [16:0] pixelAddr; // large enough for 320*240 = 76800 pixel addresses
+
+
+
+    ILI9341_Driver driverInst( .CLK_I(CLK_I), .RST_I(RST_I),
+                                .pixelDataIn(pixelDataIn), 
+                               .pixelAddr(pixelAddr),
+                               .tftChipSelect(tftChipSelect), 
+                               .tftMosi(tftMosi),
+                               .tftSck(tftSck),
+                               .tftReset(tftReset));
+
+    pixelData pixelDataInst( .memAddress(pixelAddr), .memData(pixelDataIn)); 
+endmodule
+
+
+
+module ILI9341_Driver( input logic CLK_I, RST_I,
+                     input logic [15:0] pixelDataIn,
+                    output logic [16:0] pixelAddr,
                     output logic tftChipSelect, tftMosi, tftSck, tftReset, 
-                                 dataCtrl);
+                                 dataCtrl); // TODO: delete dataCtrl
 
     parameter LAST_INIT_PARAM_ADDR = 86;
     parameter LAST_PIX_LOC_ADDR = 11;
@@ -34,8 +54,8 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
 
     logic dataSent; // indicates when to load new data onto SPI bus.
 
-    logic [17:0] memAddr;
-    logic [17:0] lastAddr;
+    logic [16:0] memAddr;
+    logic [16:0] lastAddr;
 
     logic [8:0] initParamData;  // Bit 8 indicates command or data on SPI bus
     logic [8:0] pixelLocData;
@@ -50,16 +70,19 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                               .memData(initParamData));
     pixelLocParams pixelLocParamsInst(.memAddress(memAddr[6:0]),
                               .memData(pixelLocData));
-    pixelData pixelDataInst(.memAddress(memAddr),
-                              .memData(pixelData));
 
     logic spiWriteEnable;
     logic spiStrobe;
     logic spiBusy;
     logic spiAck;
+
     logic [7:0] spiChipSelect;
-    logic [7:0] spiDataToSend;
-    logic [7:0] memVal;
+
+    logic [15:0] memVal; // value read from any of the given memory blocks 
+                        // that is to be written out over SPI.
+    logic [7:0] spiDataToSend;  // value to be sent out over SPI protocol.
+
+    logic MSB;
 
     SPI_MasterWishbone #(.NUM_CHIP_SELECTS(1), .SPI_CLK_DIV(0))
                 SPI_MasterWishboneInst( .CLK_I(CLK_I), .WE_I(spiWriteEnable),
@@ -71,9 +94,10 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                                         .chipSelects(tftChipSelect),
                                         .mosi(tftMosi), .sck(tftSck));
                                         
+    assign pixelAddr = memAddr;
 
     typedef enum logic [2:0] {INIT, HOLD_RESET, SEND_INIT_PARAMS, WAIT_TO_SEND,
-                              SEND_PIXEL_LOC, SEND_DATA} 
+                              SEND_PIXEL_LOC, SEND_DATA, DONE} 
                              stateType;
     stateType state;
 
@@ -86,6 +110,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
         end
         else 
         begin
+            // resetMemAddr is the signal to reset mem address location to 0 
+            // each time the current block of data has finished writing for 
+            // the given states.
             resetMemAddr <= (memAddr == lastAddr) & 
                             ((state == SEND_INIT_PARAMS) | 
                              (state == SEND_PIXEL_LOC) | 
@@ -149,19 +176,17 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 end
                 SEND_DATA:        
                 begin
-/*
-                    /// set address 0 and assert CSHOLD until last address
-                    spiChipSelect <= (memAddr < LAST_PIX_DATA_ADDR  - 1) ?
-                                        'h80:
-                                        'b0;   
-*/
+                    memVal <= pixelDataIn; 
 
-                    memVal <= pixelData;
                     dataOrCmd <= 'b0;
                     lastAddr <= LAST_PIX_DATA_ADDR;
                     state <= (memAddr == LAST_PIX_DATA_ADDR) ? 
-                                SEND_PIXEL_LOC:
+                                DONE:
                                 SEND_DATA;
+                end
+                DONE:
+                begin
+                    state <= SEND_PIXEL_LOC;
                 end
             endcase
         end
@@ -179,6 +204,7 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
             spiWriteEnable <= 'b0;
             dataSent <= 'b0;
             dataCtrl <= 'b0;
+            MSB <= 'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
                  (state == SEND_DATA)) 
@@ -190,10 +216,13 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 spiWriteEnable <= 'b1; 
     
                 // Load next byte of SPI data. 
-                spiDataToSend <= memVal;
+                // Should remain at lower byte only for initial data and then 
+                // toggle between lower and upper bytes.
+                spiDataToSend <= (MSB & (state == SEND_DATA)) ? 
+                                    memVal[15:8] :
+                                    memVal[7:0];    
     
                 dataSent <= 'b1;
-                
                 dataCtrl <= ~dataOrCmd;
             end
             else
@@ -201,6 +230,9 @@ module ILI9341_Ctrl( input logic CLK_I, WE_I, STB_I, RST_I,
                 // Pull down WE_I and STB_I signals.
                 spiStrobe <= 'b0;
                 spiWriteEnable <= 'b0;
+
+                // toggle whether or not MSB is being sent.
+                MSB <= ~MSB;
     
                 // Increment to next mem address once.
                 memAddr <= (dataSent) ? 
@@ -237,10 +269,10 @@ module pixelLocParams(  input logic [6:0] memAddress,
 
 endmodule
 
-module pixelData(  input logic [17:0] memAddress,
-                   output logic [7:0] memData);
 
-    (* ram_init_file = "pixelData.mif" *) logic [7:0] mem [0:76799];
+module pixelData(  input logic [16:0] memAddress,
+                   output logic [15:0] memData);
+
+    (* ram_init_file = "pixelData.mif" *) logic [15:0] mem [0:76799];
     assign memData = mem[memAddress];
-
 endmodule
