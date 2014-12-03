@@ -5,11 +5,6 @@
  */
 
 
-/*
- * \note more cs signals may be added with small changes to the wishboneCtrl
- *       module
- */
-
 module ILI9341_Ctrl( input logic CLK_I, RST_I, 
                     output logic tftChipSelect, tftMosi, tftSck, tftReset);
 
@@ -30,22 +25,26 @@ module ILI9341_Ctrl( input logic CLK_I, RST_I,
 endmodule
 
 
-
+/**
+ * \brief the main logic block containing the finite-state machine to drive
+ *        the display. Display settings are stored in ram internal to this 
+ *        module.
+ */
 module ILI9341_Driver( input logic CLK_I, RST_I,
                      input logic [15:0] pixelDataIn,
                     output logic [16:0] pixelAddr,
-                    output logic tftChipSelect, tftMosi, tftSck, tftReset, 
-                                 dataCtrl); // TODO: delete dataCtrl
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset); 
 
     parameter LAST_INIT_PARAM_ADDR = 86;
     parameter LAST_PIX_LOC_ADDR = 11;
-    //parameter LAST_PIX_DATA_ADDR = 76800;
-    parameter LAST_PIX_DATA_ADDR = 153600;
+    parameter LAST_PIX_DATA_ADDR = 76800;
+    parameter ROWS_ = 320;
+    parameter COLS_ = 240;
+
+    /// Note: these constants are based on a 50[MHz] clock speed.
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
 
-    parameter ROWS_ = 320;
-    parameter COLS_ = 240;
 
 
     logic [24:0] delayTicks;
@@ -203,7 +202,6 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
             spiStrobe <= 'b0;
             spiWriteEnable <= 'b0;
             dataSent <= 'b0;
-            dataCtrl <= 'b0;
             MSB <= 'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
@@ -223,7 +221,6 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
                                     memVal[7:0];    
     
                 dataSent <= 'b1;
-                dataCtrl <= ~dataOrCmd;
             end
             else
             begin
