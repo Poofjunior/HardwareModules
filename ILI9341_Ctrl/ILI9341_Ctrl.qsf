@@ -60,37 +60,8 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 
 
-set_location_assignment PIN_A15 -to DAT_O[7]
-set_location_assignment PIN_A13 -to DAT_O[6]
-set_location_assignment PIN_B13 -to DAT_O[5]
-set_location_assignment PIN_A11 -to DAT_O[4]
-set_location_assignment PIN_D1 -to DAT_O[3]
-set_location_assignment PIN_F3 -to DAT_O[2]
-set_location_assignment PIN_B1 -to DAT_O[1]
-set_location_assignment PIN_L3 -to DAT_O[0]
 set_location_assignment PIN_R8 -to CLK_I
-set_location_assignment PIN_J14 -to DAT_I[7]
-set_location_assignment PIN_K15 -to DAT_I[6]
-set_location_assignment PIN_L13 -to DAT_I[5]
-set_location_assignment PIN_N14 -to DAT_I[4]
-set_location_assignment PIN_P14 -to DAT_I[3]
-set_location_assignment PIN_N16 -to DAT_I[2]
-set_location_assignment PIN_P16 -to DAT_I[1]
-set_location_assignment PIN_L15 -to DAT_I[0]
-set_location_assignment PIN_J13 -to ADR_I[7]
-set_location_assignment PIN_J16 -to ADR_I[6]
-set_location_assignment PIN_M10 -to ADR_I[5]
-set_location_assignment PIN_L14 -to ADR_I[4]
-set_location_assignment PIN_N15 -to ADR_I[3]
-set_location_assignment PIN_R14 -to ADR_I[2]
-set_location_assignment PIN_P15 -to ADR_I[1]
-set_location_assignment PIN_R16 -to ADR_I[0]
-set_location_assignment PIN_E9 -to STB_I
-set_location_assignment PIN_F8 -to WE_I
-set_location_assignment PIN_D12 -to chipSelects[2]
 set_location_assignment PIN_J15 -to RST_I
-set_location_assignment PIN_B12 -to chipSelects[1]
-set_location_assignment PIN_E6 -to ACK_O
 
 set_location_assignment PIN_E10 -to tftMosi
 set_location_assignment PIN_D11 -to tftChipSelect

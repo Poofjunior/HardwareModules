@@ -6,7 +6,8 @@
 
 
 module ILI9341_Ctrl( input logic CLK_I, RST_I, 
-                    output logic tftChipSelect, tftMosi, tftSck, tftReset);
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset, 
+                                 dataCtrl);
 
     logic [15:0] pixelDataIn;   
     logic [16:0] pixelAddr; // large enough for 320*240 = 76800 pixel addresses
@@ -19,7 +20,8 @@ module ILI9341_Ctrl( input logic CLK_I, RST_I,
                                .tftChipSelect(tftChipSelect), 
                                .tftMosi(tftMosi),
                                .tftSck(tftSck),
-                               .tftReset(tftReset));
+                               .tftReset(tftReset),
+                               .dataCtrl(dataCtrl));
 
     pixelData pixelDataInst( .memAddress(pixelAddr), .memData(pixelDataIn)); 
 endmodule
@@ -33,7 +35,8 @@ endmodule
 module ILI9341_Driver( input logic CLK_I, RST_I,
                      input logic [15:0] pixelDataIn,
                     output logic [16:0] pixelAddr,
-                    output logic tftChipSelect, tftMosi, tftSck, tftReset); 
+                    output logic tftChipSelect, tftMosi, tftSck, tftReset,
+                                 dataCtrl); 
 
     parameter LAST_INIT_PARAM_ADDR = 86;
     parameter LAST_PIX_LOC_ADDR = 11;
@@ -202,6 +205,7 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
             spiStrobe <= 'b0;
             spiWriteEnable <= 'b0;
             dataSent <= 'b0;
+            dataCtrl <= 'b0;
             MSB <= 'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
@@ -220,6 +224,7 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
                                     memVal[15:8] :
                                     memVal[7:0];    
     
+                dataCtrl <= ~dataOrCmd;
                 dataSent <= 'b1;
             end
             else
@@ -231,10 +236,17 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
                 // toggle whether or not MSB is being sent.
                 MSB <= ~MSB;
     
-                // Increment to next mem address once.
+                // Increment to next mem address once when data is sent and
+                // increment to next mem address every two bytes when sending
+                // pixel data.
                 memAddr <= (dataSent) ? 
-                                    memAddr + 'b1:
-                                    memAddr;
+                                (state == SEND_DATA) ?
+                                    (MSB) ?
+                                        memAddr + 'b1 :
+                                        memAddr             :
+                                    memAddr + 'b1 :
+                                memAddr;
+
                 dataSent <= 'b0;
             end
         end
