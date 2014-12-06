@@ -28,6 +28,7 @@
 *.pin
 *.hex
 *.cdf
+*.qws
 
 # ignore Quartus II generated folders
 db/
@@ -37,3 +38,4 @@ timing/
 testbench/
 *_sim/
 output_files/
+debug/

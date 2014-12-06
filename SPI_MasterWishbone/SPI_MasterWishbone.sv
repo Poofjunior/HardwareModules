@@ -68,7 +68,9 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
     /// note: this value is slightly bigger (by one bit) in some cases where 
     //  the number of chip selects is a power of 2.
     
-    logic slowClkCtrl;  /// held HIGH when slowClk module should be enabled
+    logic slowClkCtrl;  /// held when slowClk module should be enabled
+    assign slowClkCtrl = (state == STANDBY) | (state == DONE) | 
+                         ((state == TRANSMITTING) & spiIdle);
 
     logic slowClk;  /// the SCK signal for SPI.
 
@@ -164,7 +166,8 @@ module wishboneCtrl #(NUM_CHIP_SELECTS = 1, SPI_CLK_DIV = 4)
                             ADR_I[7]:
                             CSHOLD;
 
-            slowClkCtrl <= (state == STANDBY) | (state == DONE);
+            //slowClkCtrl <= (state == STANDBY) | (state == DONE);// | 
+            //               ((state == TRANSMITTING) & spiIdle);
 
             /// State-Transition Logic:
             case (state)
@@ -211,7 +214,7 @@ module clkDiv( input logic clk, reset,
             count <= count + 8'b00000001;
     end
 
-    always_ff @ (posedge clk)
+    always_ff @ (posedge clk, posedge reset)
     if (reset)
             slowClk <= 'b0;
     else
@@ -220,5 +223,4 @@ module clkDiv( input logic clk, reset,
                             ~slowClk : 
                             slowClk;
     end
-
 endmodule
