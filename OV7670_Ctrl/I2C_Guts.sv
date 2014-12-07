@@ -1,5 +1,5 @@
 /**
- * synthesizable guts of an peripheral
+ * synthesizable guts of an i2c controller 
  * Joshua Vasquez
  * December 5, 2014
  */
@@ -9,82 +9,125 @@
  *        output values according to SPI Mode0.
  * \details note that the dataToSend input is sampled whenever the setNewData
  *          signal is asserted.
+ *
+ * \note deviceAck has not been implemented yet.
  */
-module I2C_Guts(input logic clk, reset,
+module I2C_Guts(input logic clk, reset, i2cStrobe,
                 input logic [7:0] dataToSend, 
+                input logic lastTransfer,
                output logic sda, 
                output logic scl,
-               output logic done, 
-               output logic deviceAck);    // whether or on device acknowledged
+               output logic busy);
+               //output logic ackDataToSend);    
 
-    // These two values seem "off-by one" since affected registers are changing
-    // concurrently.
-    parameter NINE_BITS_OUT = 8;
-    parameter BYTE_OUT = 7;
+    parameter NINE_BITS_OUT = 9;
+    parameter BYTE_OUT = 8;
+    parameter I2C_DELAY = 250;
+    parameter I2C_HALF_DELAY = 125;
 
-    logic [3:0] bitCount;
-    logic byteTransferred;
-
-    assign scl = (reset) ?  
-                    'b0:
-                     clk;
-
-    /// bitCount anatomy:
-    always_ff @ (negedge clk, posedge reset)
-    begin
-        if (reset)
-        begin
-            bitCount <= 'b0;
-        end
-        else begin
-            bitCount <= bitCount + 'b1;
-        end
-    end
-
-
-    /// byteTransferred and done register anatomy:
-    always_ff @ (negedge clk)
-    begin
-        if (reset)
-        begin
-            byteTransferred <= 'b0;
-            done <= 'b0;
-        end
-        else begin
-            byteTransferred <= (bitCount == BYTE_OUT)?
-                                    'b1 :
-                                    byteTransferred;
-            done <= (bitCount == NINE_BITS_OUT)?
-                        'b1 :
-                        done;
-        end
-    end
-
-
+    logic [7:0] delayTicks;
     logic [7:0] shiftReg;
-    /// shiftReg anatomy:
-    always_ff @ (negedge clk, posedge reset)
+    logic [3:0] bitCount;
+    logic delayOff;
+
+    assign delayOff = &(~delayTicks);
+
+    assign busy = (state != IDLE);
+
+    typedef enum logic [3:0] {BEGIN_XFER_STEP1, BEGIN_XFER_STEP2, 
+                              LOAD_DATA, CLK_DOWN, CLK_UP, STOP_XFER_STEP1,
+                              STOP_XFER_STEP2, XFER_COMPLETE, IDLE} stateType;
+    stateType state;
+
+    always_ff @ (posedge clk, posedge reset)
     begin
         if (reset)
         begin
-            shiftReg[7] <= dataToSend[0];
-            shiftReg[6] <= dataToSend[1];
-            shiftReg[5] <= dataToSend[2];
-            shiftReg[4] <= dataToSend[3];
-            shiftReg[3] <= dataToSend[4];
-            shiftReg[2] <= dataToSend[5];
-            shiftReg[1] <= dataToSend[6];
-            shiftReg[0] <= dataToSend[7];
+            state <= IDLE;
+            sda <= 1'b1;
+            scl <= 1'b1;
+            bitCount <= 'b0;
+            delayTicks <= 'b0;
+        end
+        else if (delayOff)
+        begin
+            case (state)
+                IDLE:
+                begin
+                    /// reset bitCount at the start of every new transfer.
+                    bitCount <= 'b0;
+                    /// keep capturing dataToSend and init transfer when
+                    /// strobed.
+                    shiftReg <= dataToSend;
+
+                    state <= (i2cStrobe)? 
+                                BEGIN_XFER_STEP1 :
+                                IDLE;
+                end 
+                BEGIN_XFER_STEP1:
+                begin
+                    sda <= 1'b0;
+                    delayTicks <= I2C_DELAY;
+                    state <= BEGIN_XFER_STEP2;
+                end
+                BEGIN_XFER_STEP2:
+                begin
+                    bitCount <= 'b0;
+                    scl <= 1'b0;
+                    delayTicks <= I2C_DELAY;
+                    state <= CLK_DOWN;
+                end
+                CLK_DOWN:
+                begin
+                    scl <= 1'b0;
+                    delayTicks <= I2C_HALF_DELAY;
+                    state <= LOAD_DATA;
+                end
+                LOAD_DATA:
+                begin
+
+                    shiftReg[7:0] <= (shiftReg[7:0] << 1);
+                    sda <= (bitCount == BYTE_OUT) ? 
+                                1'bz :
+                                (bitCount == NINE_BITS_OUT) ?
+                                    1'b0 :
+                                    shiftReg[7];
+
+                    delayTicks <= I2C_HALF_DELAY;
+                    state <= (bitCount == NINE_BITS_OUT)?
+                                (lastTransfer) ?
+                                    STOP_XFER_STEP1  :  /// send i2c stop sig.
+                                    XFER_COMPLETE:      /// get new data.
+                                CLK_UP;                 /// continue transfer.
+                end
+                CLK_UP:
+                begin
+                    bitCount <= bitCount + 1'b1;
+                    scl <= 1'b1;
+
+                    delayTicks <= I2C_DELAY;
+                    state <= CLK_DOWN;
+                end
+                STOP_XFER_STEP1:
+                begin
+                    scl <= 1'b1;
+                    bitCount <= 'b0;
+                    delayTicks <= I2C_DELAY;
+                    state <= STOP_XFER_STEP2;
+                end
+                STOP_XFER_STEP2:
+                begin
+                    sda <= 1'b1;
+                    delayTicks <= I2C_DELAY;
+                    state <= XFER_COMPLETE;
+                end
+                XFER_COMPLETE:
+                    state <= IDLE;
+                default: state <= IDLE;
+            endcase
         end
         else
-        begin
-        // Handle Output.
-            shiftReg[7:0] <= (shiftReg[7:0] >> 1);
-        end
+            delayTicks <= delayTicks - 1'b1;
     end
-    
-    assign sda = byteTransferred ? 
-                    'bz :   
-                    shiftReg[0];
 
 endmodule
