@@ -5,9 +5,12 @@
  */
 
 
-module OV7670_Ctrl( input logic clk, reset,
-                   output logic sda, 
-                   output logic scl);
+module OV7670_Ctrl( input logic clk, reset, vsync, href,
+                    input logic [7:0] OV7670_Data,
+                   output logic sda, scl,
+                   output logic OV7670_Clk,
+                   output logic newPixel,
+                   output logic [15:0] pixelData);
                                  
     logic i2cClk, i2cStrobe;
     logic [7:0] memAddr;
@@ -15,13 +18,20 @@ module OV7670_Ctrl( input logic clk, reset,
     logic busy, lastTransfer;
     logic [7:0] dataToSend;
 
+
     OV7670_Driver OV7670_DriverInst( .clk(clk), .reset(reset),
-                                         .i2cBusy(busy),
-                                         .memData(memData),
-                                         .dataToSend(dataToSend),
-                                         .i2cStrobe(i2cStrobe),
-                                         .lastTransfer(lastTransfer),
-                                         .memAddr(memAddr));
+                                     .i2cBusy(busy),
+                                     .memData(memData),
+                                     .OV7670_Data(OV7670_Data),
+                                     .vsync(vsync),
+                                     .href(href),
+                                     .dataToSend(dataToSend),
+                                     .i2cStrobe(i2cStrobe),
+                                     .lastTransfer(lastTransfer),
+                                     .memAddr(memAddr),
+                                     .OV7670_Clk(OV7670_Clk),
+                                     .newPixel(newPixel),
+                                     .pixelData(pixelData));
 
     I2C_Guts I2C_GutsInst(.clk(clk), .reset(reset),
                           .i2cStrobe(i2cStrobe),
@@ -32,6 +42,8 @@ module OV7670_Ctrl( input logic clk, reset,
 
     initParams initParamsInst(.memAddress(memAddr),
                               .memData(memData));
+
+
 endmodule
 
 
@@ -42,30 +54,41 @@ endmodule
 module OV7670_Driver(input logic clk, reset,
                      input logic i2cBusy,
                      input logic [8:0] memData,
-                    output logic [7:0] dataToSend,
+                     input logic [7:0] OV7670_Data,
+                     input logic vsync, href,
+                    output logic [7:0] dataToSend,  // over SCCB interface
                     output logic i2cStrobe, lastTransfer,
-                    output logic [7:0] memAddr);     // is it really [8:0]?
+                    output logic [7:0] memAddr,
+                    output logic OV7670_Clk, newPixel,
+                    output logic [15:0] pixelData);     // is it really [8:0]?
 
-    parameter LAST_INIT_PARAM_ADDR = 86;
+    parameter LAST_INIT_PARAM_ADDR = 3;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter DELAY_ONE = 10; 
 
+    clkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Clk);
+
+    logic frameGrabberReset;
+    frameGrabber frameGrabberInst(.OV7670_CLK(OV7670_clk), 
+                                  .reset(frameGrabberReset),
+                                  .cameraData(OV7670_Data),
+                                  .pixel(pixelData), 
+                                  .rows(),
+                                  .cols(),
+                                  .newData(newPixel));
+
     logic [24:0] delayTicks;
     logic delayOff;
     assign delayOff = &(~delayTicks);
 
-    logic resetMemAddr;
 
-
-
-
-    typedef enum logic [2:0] {INIT, I2C_DONE, I2C_BUSY, INIT_COMPLETE} 
+    typedef enum logic [2:0] {INIT, I2C_DONE, I2C_BUSY, INIT_COMPLETE, 
+                              NEW_FRAME} 
                               stateType;
 
     stateType state;
-
 
     always_ff @ (posedge clk, posedge reset)
     begin
@@ -77,6 +100,7 @@ module OV7670_Driver(input logic clk, reset,
             lastTransfer <= memData[8];
             i2cStrobe <= 'b0;
             delayTicks <= 'b0;
+            frameGrabberReset <= 1'b1;
         end
         else if (delayOff) 
         begin
@@ -114,6 +138,7 @@ module OV7670_Driver(input logic clk, reset,
                 begin
                     i2cStrobe <= 1'b0;
                     state <= INIT_COMPLETE;
+                    frameGrabberReset <= (~vsync & href);
                 end
             endcase
         end
@@ -123,6 +148,49 @@ module OV7670_Driver(input logic clk, reset,
 endmodule
 
 
+module frameGrabber( input logic OV7670_CLK, reset,
+                     input logic [7:0] cameraData,
+                     output logic [15:0] pixel, 
+                     output logic [7:0] rows,
+                     output logic [8:0] cols,
+                     output logic newData);
+    logic MSB;
+
+    always_ff @ (posedge OV7670_CLK, posedge reset)
+    begin
+        if (reset)
+        begin
+            rows <= 7'b0;
+            cols <= 8'b0;
+            MSB <= 1'b0;
+            newData <= 1'b0;
+        end
+        else begin
+            if (MSB)
+            begin
+                pixel[15:8] <= cameraData;
+                newData <= 1'b1;
+            end
+            else 
+            begin
+                pixel[7:0] <= cameraData;
+                newData <= 1'b0;
+            end
+            // TODO: remove magic numbers
+            rows <= MSB ?
+                        (rows == 240) ?
+                            7'b0:
+                            rows + 7'b1 :
+                        rows;
+            cols <= (MSB & (rows == 240))?
+                        (cols == 320) ?
+                            8'b0:
+                            cols + 8'b1  :
+                        cols;
+        end
+    end
+endmodule
+
 
 /**
  * \brief contains settings to send to camera
@@ -131,7 +199,7 @@ endmodule
 module initParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData); 
 
-    (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:88];
+    (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:2];
     assign memData = mem[memAddress];
 
 endmodule
@@ -169,5 +237,5 @@ module clkDiv( input logic clk, reset,
                             ~slowClk :                                          
                             slowClk;                                            
     end                                                                         
-endmodule
- 
+endmodule                                                                       
+
