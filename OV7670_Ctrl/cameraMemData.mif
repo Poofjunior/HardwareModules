@@ -23,5 +23,6 @@ DATA_RADIX=HEX;
 CONTENT BEGIN
 	00  :   042;
 	01  :   012;
-	02  :   101;    -- 0x11 = QVGA and RGB565
+	02  :   111;    -- 0x11 = QVGA and RGB565
+                    -- 0x01 = VGA and RGB565
 END;
