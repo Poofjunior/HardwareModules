@@ -20,9 +20,6 @@ module OV7670_Stream( /// Camera inputs
                      output logic tftChipSelect, tftMosi, tftSck, tftReset,
                      output logic dataCtrl);
 
-/// TODO: spoof memory access to circumvent addressing scheme and need for 
-///       ram in the middle
-
 logic clk100MHz;
 logic newPixel;
 logic [15:0] cameraPixelData; 
@@ -35,7 +32,10 @@ OV7670_Ctrl OV7670_Inst( .clk(clk), .reset(reset), .vsync(vsync),
                            .sda(sda), .scl(scl), .OV7670_Xclk(OV7670_Xclk),
                            .newPixel(newPixel), .pixelData(cameraPixelData));
 
+/// TODO: change .dataReady(href) to something else if first pixe is being
+///       dropped.
 ILI9341_Driver ILI9341_DriverInst( .CLK_I(clk100MHz), .RST_I(reset), 
+                                   .newFrameStart(vsync), .dataReady(href),
                                    .pixelDataIn(cameraPixelData),
                                    .pixelAddr(),
                                    .tftChipSelect(tftChipSelect), 
