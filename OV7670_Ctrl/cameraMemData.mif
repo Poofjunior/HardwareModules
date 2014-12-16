@@ -15,7 +15,7 @@
 -- Quartus II generated Memory Initialization File (.mif)
 
 WIDTH=9;
-DEPTH=3;
+DEPTH=6;
 
 ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
@@ -25,4 +25,7 @@ CONTENT BEGIN
 	01  :   012;
 	02  :   111;    -- 0x11 = QVGA and RGB565
                     -- 0x01 = VGA and RGB565
+    03  :   042;
+    04  :   040;
+    05  :   110;
 END;

@@ -66,9 +66,9 @@ module OV7670_Driver(input logic clk, reset, pclk,
                     output logic i2cStrobe, lastTransfer,
                     output logic [7:0] memAddr,
                     output logic OV7670_Xclk, newPixel,
-                    output logic [15:0] pixelData);     // is it really [8:0]?
+                    output logic [15:0] pixelData);
 
-    parameter LAST_INIT_PARAM_ADDR = 3;
+    parameter LAST_INIT_PARAM_ADDR = 6;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
@@ -77,6 +77,8 @@ module OV7670_Driver(input logic clk, reset, pclk,
     OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Xclk);
 
     logic frameGrabberReset;
+
+
     frameGrabber frameGrabberInst(.pclk(pclk), 
                                   .reset(frameGrabberReset),
                                   .cameraData(OV7670_Data),
@@ -144,7 +146,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
                 begin
                     i2cStrobe <= 1'b0;
                     state <= INIT_COMPLETE;
-                    frameGrabberReset <= (~vsync & href);
+                    frameGrabberReset <= (vsync );
                 end
             endcase
         end
@@ -170,18 +172,10 @@ module frameGrabber( input logic pclk, reset,
             cols <= 8'b0;
             MSB <= 1'b0;
             newData <= 1'b0;
+            pixel[15:0] <= 16'b0;
         end
         else begin
-            if (MSB)
-            begin
-                pixel[15:8] <= cameraData;
-                newData <= 1'b1;
-            end
-            else 
-            begin
-                pixel[7:0] <= cameraData;
-                newData <= 1'b0;
-            end
+            MSB <= ~MSB;
             // TODO: remove magic numbers
             rows <= MSB ?
                         (rows == 240) ?
@@ -193,6 +187,17 @@ module frameGrabber( input logic pclk, reset,
                             8'b0:
                             cols + 8'b1  :
                         cols;
+
+            if (MSB)
+            begin
+                pixel[15:8] <= cameraData;
+                newData <= 1'b1;
+            end
+            else 
+            begin
+                pixel[7:0] <= cameraData;
+                newData <= 1'b0;
+            end
         end
     end
 endmodule
@@ -205,7 +210,7 @@ endmodule
 module initCameraParams(  input logic [6:0] memAddress,
                          output logic [8:0] memData); 
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:2];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:5];
 
     assign memData = mem[memAddress];
 

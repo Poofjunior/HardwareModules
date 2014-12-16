@@ -16,7 +16,7 @@ module ILI9341_Ctrl( input logic CLK_I, RST_I,
 
 
     ILI9341_Driver driverInst( .CLK_I(CLK_I), .RST_I(RST_I),
-                               .newFrameStart(1'b1), 
+                               .initPixelStrobe(1'b0), 
                                .dataReady(1'b1),
                                 .pixelDataIn(pixelDataIn), 
                                .pixelAddr(pixelAddr),
@@ -36,7 +36,7 @@ endmodule
  *        module.
  */
 module ILI9341_Driver(input logic CLK_I, RST_I,
-                      input logic newFrameStart, /// vsync if provided
+                      input logic initPixelStrobe, 
                       input logic dataReady,     /// controls when pixelDataIn
                                                  /// is output on SPI bus.
                       input logic [15:0] pixelDataIn,
@@ -189,9 +189,12 @@ module ILI9341_Driver(input logic CLK_I, RST_I,
 
                     dataOrCmd <= 'b0;   /// Only send data from this point on
                     lastAddr <= LAST_PIX_DATA_ADDR;
-                    state <= (memAddr == LAST_PIX_DATA_ADDR) ? 
-                                DONE:
-                                SEND_DATA;
+                    /// reset pixel location to beginning if strobed.
+                    state <= initPixelStrobe ?
+                                SEND_PIXEL_LOC :
+                                (memAddr == LAST_PIX_DATA_ADDR) ? 
+                                    DONE:
+                                    SEND_DATA;
                 end
                 DONE:
                 begin
@@ -208,7 +211,7 @@ module ILI9341_Driver(input logic CLK_I, RST_I,
 /// signals to SPI module.
     always_ff @ (posedge CLK_I)
     begin
-        if (RST_I | resetMemAddr | delayTicks | newFrameStart)
+        if (RST_I | resetMemAddr | delayTicks | initPixelStrobe)
         begin
             memAddr <= 'b0;
             spiStrobe <= 'b0;
@@ -218,9 +221,9 @@ module ILI9341_Driver(input logic CLK_I, RST_I,
             MSB <= 'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
-                 (state == SEND_DATA)) 
+                 ((state == SEND_DATA) & dataReady))    // dataReady is href 
         begin
-            if ((~spiBusy) & dataReady)
+            if (~spiBusy)
             begin
                 // Enable WE_I and STB_I signals to signal start of SPI
                 // trasnfer.
