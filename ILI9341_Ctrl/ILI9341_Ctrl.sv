@@ -16,6 +16,8 @@ module ILI9341_Ctrl( input logic CLK_I, RST_I,
 
 
     ILI9341_Driver driverInst( .CLK_I(CLK_I), .RST_I(RST_I),
+                               .newFrameStart(1'b1), 
+                               .dataReady(1'b1),
                                 .pixelDataIn(pixelDataIn), 
                                .pixelAddr(pixelAddr),
                                .tftChipSelect(tftChipSelect), 
@@ -33,10 +35,13 @@ endmodule
  *        the display. Display settings are stored in ram internal to this 
  *        module.
  */
-module ILI9341_Driver( input logic CLK_I, RST_I,
-                     input logic [15:0] pixelDataIn,
-                    output logic [16:0] pixelAddr,
-                    output logic tftChipSelect, tftMosi, tftSck, tftReset,
+module ILI9341_Driver(input logic CLK_I, RST_I,
+                      input logic newFrameStart, /// vsync if provided
+                      input logic dataReady,     /// controls when pixelDataIn
+                                                 /// is output on SPI bus.
+                      input logic [15:0] pixelDataIn,
+                     output logic [16:0] pixelAddr,
+                     output logic tftChipSelect, tftMosi, tftSck, tftReset,
                                  dataCtrl); 
 
     parameter LAST_INIT_PARAM_ADDR = 86;
@@ -105,6 +110,7 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
     stateType state;
 
 
+/// Logic for resetMemAddr
     always_ff @ (posedge CLK_I)
     begin
         if (RST_I)
@@ -181,7 +187,7 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
                 begin
                     memVal <= pixelDataIn; 
 
-                    dataOrCmd <= 'b0;
+                    dataOrCmd <= 'b0;   /// Only send data from this point on
                     lastAddr <= LAST_PIX_DATA_ADDR;
                     state <= (memAddr == LAST_PIX_DATA_ADDR) ? 
                                 DONE:
@@ -198,9 +204,11 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
     end
 
 
+/// Logic block for incrementing pixelAddr (via memAddr) and low-level
+/// signals to SPI module.
     always_ff @ (posedge CLK_I)
     begin
-        if (RST_I | resetMemAddr | delayTicks)
+        if (RST_I | resetMemAddr | delayTicks | newFrameStart)
         begin
             memAddr <= 'b0;
             spiStrobe <= 'b0;
@@ -212,9 +220,10 @@ module ILI9341_Driver( input logic CLK_I, RST_I,
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
                  (state == SEND_DATA)) 
         begin
-            if (~spiBusy)
+            if ((~spiBusy) & dataReady)
             begin
-                // Enable WE_I and STB_I signals.
+                // Enable WE_I and STB_I signals to signal start of SPI
+                // trasnfer.
                 spiStrobe <= 'b1; 
                 spiWriteEnable <= 'b1; 
     

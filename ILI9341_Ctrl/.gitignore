@@ -29,6 +29,7 @@
 *.hex
 *.cdf
 *.qws
+*.ddb
 
 # ignore Quartus II generated folders
 db/
