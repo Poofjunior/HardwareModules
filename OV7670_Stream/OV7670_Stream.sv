@@ -4,6 +4,8 @@
  * December 5, 2014
  */
 
+`include <filePaths.sv>
+
 
 /**
  * \brief streams camera data to the screen at 30 FPS

@@ -3,7 +3,7 @@
  * Joshua Vasquez
  * November 23 - December 3, 2014
  */
-//`include "pixelLocParams.mif"
+`include <filePaths.sv>
 
 
 module ILI9341_Ctrl( input logic CLK_I, RST_I, 
@@ -265,7 +265,7 @@ endmodule
 module initParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:88];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_Ctrl/memData.mif) *) logic [8:0] mem [0:88];
     assign memData = mem[memAddress];
 
 endmodule
@@ -274,7 +274,7 @@ endmodule
 module pixelLocParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = "pixelLocParams.mif" *) logic [8:0] mem [0:10];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_Ctrl/pixelLocParams.mif) *) logic [8:0] mem [0:10];
     assign memData = mem[memAddress];
 
 endmodule

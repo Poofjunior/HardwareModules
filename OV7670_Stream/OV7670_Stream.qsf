@@ -50,9 +50,9 @@ set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name TIMEQUEST_DO_CCPP_REMOVAL ON
+set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
 set_global_assignment -name MIF_FILE ../ILI9341_Ctrl/pixelLocParams.mif
 set_global_assignment -name MIF_FILE ../ILI9341_Ctrl/memData.mif
-set_global_assignment -name MIF_FILE ../OV7670_Ctrl/cameraMemData.mif
 set_global_assignment -name SYSTEMVERILOG_FILE ../ILI9341_Ctrl/SPI_MasterWishbone.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/OV7670_Ctrl.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/I2C_Guts.sv

@@ -3,6 +3,7 @@
  * Joshua Vasquez
  * December 5, 2014
  */
+`include <filePaths.sv>
 
 
 /**
@@ -204,7 +205,8 @@ endmodule
 module initCameraParams(  input logic [6:0] memAddress,
                          output logic [8:0] memData); 
 
-    (* ram_init_file = "cameraMemData.mif" *) logic [8:0] mem [0:2];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:2];
+
     assign memData = mem[memAddress];
 
 endmodule

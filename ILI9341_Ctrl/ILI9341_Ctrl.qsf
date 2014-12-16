@@ -68,6 +68,7 @@ set_location_assignment PIN_D11 -to tftChipSelect
 set_location_assignment PIN_D9 -to tftSck
 set_location_assignment PIN_A12 -to dataCtrl
 set_location_assignment PIN_C11 -to tftReset
+set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
 set_global_assignment -name MIF_FILE pixelLocParams.mif
 set_global_assignment -name MIF_FILE pixelData.mif
 set_global_assignment -name MIF_FILE memData.mif

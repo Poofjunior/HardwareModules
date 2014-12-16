@@ -69,6 +69,7 @@ set_location_assignment PIN_P14 -to sda
 set_location_assignment PIN_N14 -to href
 set_location_assignment PIN_L14 -to vsync
 set_location_assignment PIN_M10 -to OV7670_Clk
+set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
 set_global_assignment -name MIF_FILE cameraMemData.mif
 set_global_assignment -name SYSTEMVERILOG_FILE I2C_Guts.sv
 set_global_assignment -name SYSTEMVERILOG_FILE OV7670_Ctrl.sv
