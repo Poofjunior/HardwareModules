@@ -3,6 +3,7 @@
  * Joshua Vasquez
  * November 23 - December 3, 2014
  */
+//`include "pixelLocParams.mif"
 
 
 module ILI9341_Ctrl( input logic CLK_I, RST_I, 

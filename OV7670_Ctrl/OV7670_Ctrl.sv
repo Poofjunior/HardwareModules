@@ -5,7 +5,11 @@
  */
 
 
-module OV7670_Ctrl( input logic clk, reset, vsync, href,
+/**
+ * \brief initializes the OV7670 with the desired I2C settings and extracts
+ *        each pixel
+ */
+module OV7670_Ctrl( input logic clk, reset, vsync, href, pclk,
                     input logic [7:0] OV7670_Data,
                    output logic sda, scl,
                    output logic OV7670_Clk,
@@ -20,6 +24,7 @@ module OV7670_Ctrl( input logic clk, reset, vsync, href,
 
 
     OV7670_Driver OV7670_DriverInst( .clk(clk), .reset(reset),
+                                     .pclk(pclk),
                                      .i2cBusy(busy),
                                      .memData(memData),
                                      .OV7670_Data(OV7670_Data),
@@ -40,8 +45,8 @@ module OV7670_Ctrl( input logic clk, reset, vsync, href,
                           .sda(sda), .scl(scl),
                           .busy(busy));
 
-    initParams initParamsInst(.memAddress(memAddr),
-                              .memData(memData));
+    initCameraParams initCameraParamsInst(.memAddress(memAddr),
+                                          .memData(memData));
 
 
 endmodule
@@ -51,7 +56,7 @@ endmodule
  * \brief the main logic block containing the finite-state machine to interact 
  *        with the camera.
  */
-module OV7670_Driver(input logic clk, reset,
+module OV7670_Driver(input logic clk, reset, pclk,
                      input logic i2cBusy,
                      input logic [8:0] memData,
                      input logic [7:0] OV7670_Data,
@@ -68,10 +73,10 @@ module OV7670_Driver(input logic clk, reset,
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter DELAY_ONE = 10; 
 
-    clkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Clk);
+    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Clk);
 
     logic frameGrabberReset;
-    frameGrabber frameGrabberInst(.OV7670_CLK(OV7670_clk), 
+    frameGrabber frameGrabberInst(.pclk(pclk), 
                                   .reset(frameGrabberReset),
                                   .cameraData(OV7670_Data),
                                   .pixel(pixelData), 
@@ -148,7 +153,7 @@ module OV7670_Driver(input logic clk, reset,
 endmodule
 
 
-module frameGrabber( input logic OV7670_CLK, reset,
+module frameGrabber( input logic pclk, reset,
                      input logic [7:0] cameraData,
                      output logic [15:0] pixel, 
                      output logic [7:0] rows,
@@ -156,7 +161,7 @@ module frameGrabber( input logic OV7670_CLK, reset,
                      output logic newData);
     logic MSB;
 
-    always_ff @ (posedge OV7670_CLK, posedge reset)
+    always_ff @ (posedge pclk, posedge reset)
     begin
         if (reset)
         begin
@@ -196,8 +201,8 @@ endmodule
  * \brief contains settings to send to camera
  * \details MSbit indicates end of a single transfer
  */
-module initParams(  input logic [6:0] memAddress,
-                   output logic [8:0] memData); 
+module initCameraParams(  input logic [6:0] memAddress,
+                         output logic [8:0] memData); 
 
     (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:2];
     assign memData = mem[memAddress];
@@ -205,7 +210,7 @@ module initParams(  input logic [6:0] memAddress,
 endmodule
 
 
-module clkDiv( input logic clk, reset,                                          
+module OV7670_ClkDiv( input logic clk, reset,                                          
                input logic [7:0] divInput,      // clock divisor                
               output logic slowClk);                                            
                                                                                 
