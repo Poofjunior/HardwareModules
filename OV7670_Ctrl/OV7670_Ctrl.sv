@@ -12,7 +12,7 @@
 module OV7670_Ctrl( input logic clk, reset, vsync, href, pclk,
                     input logic [7:0] OV7670_Data,
                    output logic sda, scl,
-                   output logic OV7670_Clk,
+                   output logic OV7670_Xclk,
                    output logic newPixel,
                    output logic [15:0] pixelData);
                                  
@@ -34,7 +34,7 @@ module OV7670_Ctrl( input logic clk, reset, vsync, href, pclk,
                                      .i2cStrobe(i2cStrobe),
                                      .lastTransfer(lastTransfer),
                                      .memAddr(memAddr),
-                                     .OV7670_Clk(OV7670_Clk),
+                                     .OV7670_Xclk(OV7670_Xclk),
                                      .newPixel(newPixel),
                                      .pixelData(pixelData));
 
@@ -64,7 +64,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
                     output logic [7:0] dataToSend,  // over SCCB interface
                     output logic i2cStrobe, lastTransfer,
                     output logic [7:0] memAddr,
-                    output logic OV7670_Clk, newPixel,
+                    output logic OV7670_Xclk, newPixel,
                     output logic [15:0] pixelData);     // is it really [8:0]?
 
     parameter LAST_INIT_PARAM_ADDR = 3;
@@ -73,7 +73,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter DELAY_ONE = 10; 
 
-    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Clk);
+    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Xclk);
 
     logic frameGrabberReset;
     frameGrabber frameGrabberInst(.pclk(pclk), 
@@ -204,7 +204,7 @@ endmodule
 module initCameraParams(  input logic [6:0] memAddress,
                          output logic [8:0] memData); 
 
-    (* ram_init_file = "memData.mif" *) logic [8:0] mem [0:2];
+    (* ram_init_file = "cameraMemData.mif" *) logic [8:0] mem [0:2];
     assign memData = mem[memAddress];
 
 endmodule
