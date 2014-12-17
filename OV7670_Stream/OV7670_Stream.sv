@@ -18,7 +18,8 @@ module OV7670_Stream( /// Camera inputs
                      output logic OV7670_Xclk,
                      /// Screen outputs
                      output logic tftChipSelect, tftMosi, tftSck, tftReset,
-                     output logic dataCtrl);
+                     output logic dataCtrl,
+                     output logic debug);
 logic buttonReset;
 assign buttonReset = ~reset;
 
@@ -27,6 +28,7 @@ logic newPixel;
 logic [15:0] cameraPixelData; 
 
 logic initPixelStrobe;
+assign debug = initPixelStrobe;
 
 
 /// ILI9341 Display needs a faster clock to generate a 50 Meg output speed.
@@ -37,11 +39,10 @@ OV7670_Ctrl OV7670_Inst( .clk(clk), .reset(buttonReset), .vsync(vsync),
                            .sda(sda), .scl(scl), .OV7670_Xclk(OV7670_Xclk),
                            .newPixel(newPixel), .pixelData(cameraPixelData));
 
-/// TODO: change .dataReady(href) to something else if first pixe is being
-///       dropped.
 ILI9341_Driver ILI9341_DriverInst( .CLK_I(clk100MHz), .RST_I(buttonReset), 
                                    .initPixelStrobe(initPixelStrobe), 
-                                   .dataReady(href & ~pclk),
+                                   // only grab data while pixel isn't changing
+                                   .dataReady(href & ~pclk & ~vsync),
                                    .pixelDataIn(cameraPixelData),
                                    .pixelAddr(),
                                    .tftChipSelect(tftChipSelect), 
@@ -49,9 +50,9 @@ ILI9341_Driver ILI9341_DriverInst( .CLK_I(clk100MHz), .RST_I(buttonReset),
                                    .tftReset(tftReset), .dataCtrl(dataCtrl));
 
 logic vsyncEdgeCatch0, vsyncEdgeCatch1;
-always_ff @ (posedge clk)
+always_ff @ (posedge clk100MHz, posedge buttonReset)
 begin
-    if (reset)
+    if (buttonReset)
     begin
         vsyncEdgeCatch0 <= 1'b0;
         vsyncEdgeCatch1 <= 1'b0;

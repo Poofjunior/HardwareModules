@@ -68,7 +68,8 @@ module OV7670_Driver(input logic clk, reset, pclk,
                     output logic OV7670_Xclk, newPixel,
                     output logic [15:0] pixelData);
 
-    parameter LAST_INIT_PARAM_ADDR = 6;
+    parameter LAST_INIT_PARAM_ADDR = 15;
+    parameter SETTINGS_MEM_SIZE = 15;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
@@ -146,7 +147,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
                 begin
                     i2cStrobe <= 1'b0;
                     state <= INIT_COMPLETE;
-                    frameGrabberReset <= (vsync );
+                    frameGrabberReset <= (vsync & ~href);
                 end
             endcase
         end
@@ -170,7 +171,7 @@ module frameGrabber( input logic pclk, reset,
         begin
             rows <= 7'b0;
             cols <= 8'b0;
-            MSB <= 1'b0;
+            MSB <= 1'b1;
             newData <= 1'b0;
             pixel[15:0] <= 16'b0;
         end
@@ -209,8 +210,9 @@ endmodule
  */
 module initCameraParams(  input logic [6:0] memAddress,
                          output logic [8:0] memData); 
+    // TODO: Make global and declarable in the top level module.
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:5];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:14];
 
     assign memData = mem[memAddress];
 
