@@ -44,7 +44,7 @@ module ILI9341_Driver(input logic CLK_I, RST_I,
                      output logic tftChipSelect, tftMosi, tftSck, tftReset,
                                  dataCtrl); 
 
-    parameter LAST_INIT_PARAM_ADDR = 86;
+    parameter LAST_INIT_PARAM_ADDR = 96;
     parameter LAST_PIX_LOC_ADDR = 11;
     parameter LAST_PIX_DATA_ADDR = 76800;
     parameter ROWS_ = 320;
