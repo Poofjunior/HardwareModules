@@ -74,8 +74,9 @@ module OV7670_Driver(input logic clk, reset, pclk,
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter DELAY_ONE = 10; 
-
-    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Xclk);
+    
+    /// 8'b1 puts output at 15FPS
+    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b1, OV7670_Xclk);
 
     logic frameGrabberReset;
 
@@ -192,12 +193,12 @@ module frameGrabber( input logic pclk, reset,
             if (MSB)
             begin
                 pixel[15:8] <= cameraData;
-                newData <= 1'b1;
+                newData <= 1'b0;
             end
             else 
             begin
                 pixel[7:0] <= cameraData;
-                newData <= 1'b0;
+                newData <= 1'b1;
             end
         end
     end

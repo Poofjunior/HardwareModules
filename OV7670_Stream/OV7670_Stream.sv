@@ -28,7 +28,7 @@ logic newPixel;
 logic [15:0] cameraPixelData; 
 
 logic initPixelStrobe;
-assign debug = initPixelStrobe;
+assign debug = dataReady;
 
 
 /// ILI9341 Display needs a faster clock to generate a 50 Meg output speed.
@@ -43,11 +43,29 @@ ILI9341_Driver ILI9341_DriverInst( .CLK_I(clk100MHz), .RST_I(buttonReset),
                                    .initPixelStrobe(initPixelStrobe), 
                                    // only grab data while pixel isn't changing
                                    .dataReady(href & ~pclk & ~vsync),
-                                   .pixelDataIn(cameraPixelData),
+                                   //.dataReady(dataReady),
                                    .pixelAddr(),
+                                   .pixelDataIn(cameraPixelData),
                                    .tftChipSelect(tftChipSelect), 
                                    .tftMosi(tftMosi), .tftSck(tftSck), 
                                    .tftReset(tftReset), .dataCtrl(dataCtrl));
+
+logic dataReady;
+logic [9:0] count;
+assign dataReady = ~pclk & ~vsync & (href | (count > 0));
+
+always_ff @ (posedge pclk, posedge vsync)
+    begin
+        if (vsync)
+            count <= 10'b0;
+    else
+    begin
+        if ((href) | ((count > 0) & (count < 640)))
+            count <= count + 10'b1;
+        else
+            count <= 10'b0;
+    end
+end
 
 logic vsyncEdgeCatch0, vsyncEdgeCatch1;
 always_ff @ (posedge clk100MHz, posedge buttonReset)

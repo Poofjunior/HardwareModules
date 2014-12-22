@@ -31,11 +31,11 @@ CONTENT BEGIN
 
     06  :   042;
     07  :   032;    -- HREF
-    08  :   127;    -- HREF[2:0] = HSTART[2:0] and HREF[5:3] = HSTOP[2:0] 
+    08  :   124;    -- HREF[2:0] = HSTART[2:0] and HREF[5:3] = HSTOP[2:0] 
 
     09  :   042;
     0A  :   017;    -- HSTART[10:3]
-    0B  :   115;    -- upper bits of 164 in hex
+    0B  :   114;    -- upper bits of 164 in hex
 
     0C  :   042;
     0D  :   018;    -- HSTOP[10:3]
