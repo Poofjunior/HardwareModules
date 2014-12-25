@@ -1,0 +1,22 @@
+DEPTH = 11;
+WIDTH = 9;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+    00  :   12A; -- <Memory Address> : <Data>
+    01  :   00;
+    02  :   00;
+    03  :   01;
+    04  :   3F;
+    
+    05  :   12B;
+    06  :   00;
+    07  :   00;
+    08  :   00;
+    09  :   EF;
+
+    0A  :   12C;
+    
+END;

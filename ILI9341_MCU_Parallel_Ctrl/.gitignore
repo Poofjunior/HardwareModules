@@ -1,0 +1,42 @@
+# A modified .gitignore file, where the original was inspired from:
+# https://raw.githubusercontent.com/tcamolesi/simple-mips/master/quartus/.gitignore 
+#
+
+# ignore most Quartus II generated files
+*sopc_*
+*.jdi
+*.ptf.*
+*.sof
+*.pof
+*.smsg
+*_inst.vhd
+*_generation_script*
+*.done
+*.qarlog
+*.rpt
+*.summary
+*.cmp
+*.eqn
+*.html
+*.bak
+*.qar
+*.sopc_builder
+*example*
+*~
+*.sdc
+*.tcl
+*.pin
+*.hex
+*.cdf
+*.qws
+*.ddb
+
+# ignore Quartus II generated folders
+db/
+incremental_db/
+simulation/
+timing/
+testbench/
+*_sim/
+output_files/
+debug/
