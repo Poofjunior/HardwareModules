@@ -56,6 +56,7 @@ module ILI9341_8080_I_Driver(
  /// indicates whether parallel bus byte is cmd or data based on memory values
         output logic tftDataCmd); 
 
+//// BEGIN: CONSTANTS 
 /// number of values in the memory containing all of the initialization values.
     parameter NUM_INIT_PARAMS = 96;
 
@@ -71,6 +72,7 @@ module ILI9341_8080_I_Driver(
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
+//// END: CONSTANTS 
 
 
     logic [24:0] delayTicks;
@@ -100,8 +102,6 @@ module ILI9341_8080_I_Driver(
 /// memory containing parameters to send over at the start of each new frame
     pixelStartParams pixelStartParamsInst(.memAddress(memAddr[6:0]),
                               .memData(pixelLocData));
-
-    logic tftWriteEnable;
 
 /// the value read from any of the given memory blocks that is to be written 
 /// out over parallel port
@@ -144,7 +144,7 @@ module ILI9341_8080_I_Driver(
             state <= INIT;
             delayTicks <= 'b0;
             lastAddr <= NUM_INIT_PARAMS;
-            tftDataOrCmd <= 'b0;
+            tftDataCmd <= 'b0;
             tftReset <= 'b1;
             tftChipSelect <= 'b1;
         end
@@ -155,7 +155,7 @@ module ILI9341_8080_I_Driver(
                 begin
                     /// Load starting byte of parallel bus data. 
                     memVal <= initParamData[7:0];
-                    tftDataOrCmd <= ~initParamData[8];
+                    tftDataCmd <= ~initParamData[8];
                     /// Pull reset low to trigger a reset, and delay before 
                     /// triggering next state.
                     tftReset <=  'b0;   
@@ -177,7 +177,7 @@ module ILI9341_8080_I_Driver(
                     /// Initialize transmission with ILI9341.
                     tftChipSelect <= 'b0;
                     memVal <= initParamData[7:0];
-                    tftDataOrCmd <= ~initParamData[8];
+                    tftDataCmd <= ~initParamData[8];
                     lastAddr <= NUM_INIT_PARAMS;
                     state <= (memAddr == NUM_INIT_PARAMS) ?
                                 WAIT_TO_SEND :
@@ -195,7 +195,7 @@ module ILI9341_8080_I_Driver(
                     /// Reinitialize transmission with ILI9341.
                     tftChipSelect <= 'b0;
                     memVal <= pixelLocData[7:0];
-                    tftDataOrCmd <= ~pixelLocData[8];
+                    tftDataCmd <= ~pixelLocData[8];
                     lastAddr <= NUM_FRAME_START_PARAMS;
                     state <= (memAddr == NUM_FRAME_START_PARAMS) ? 
                                 SEND_DATA :
@@ -205,7 +205,7 @@ module ILI9341_8080_I_Driver(
                 begin
                     memVal <= pixelDataIn; 
 
-                    tftDataOrCmd <= 1'b1;   /// Only send data from this point on
+                    tftDataCmd <= 1'b1;   /// Only send data from this point on
                     lastAddr <= NUM_PIXELS;
                     /// reset pixel location to beginning if strobed.
                     state <= newFrameStrobe ?
@@ -226,12 +226,9 @@ module ILI9341_8080_I_Driver(
             delayTicks <= delayTicks - 'b1;
     end
 
-/// TODO TODO TODO
-///TODO: rewrite entire contents below to be a parallel port sender logic
-/// block.
 
-/// Logic block for incrementing pixelAddr (via memAddr) and setting output 
-/// signals to ILI9341 8080 I interface.
+/// Logic block for incrementing pixelAddr (via memAddr) and setting data on 
+/// parallel port to ILI9341 via the 8080 I interface.
     always_ff @ (posedge clk)
     begin
         if (reset | resetMemAddr | delayTicks | newFrameStrobe)
@@ -239,11 +236,10 @@ module ILI9341_8080_I_Driver(
             memAddr <= 'b0;
             tftWriteEnable <= 1'b1;
             dataSent <= 1'b0;
-            tftDataCmd <= 1'b1;
             MSB <= 1'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
-                 ((state == SEND_DATA) & dataReady))    // dataReady is href 
+                 ((state == SEND_DATA) & dataReady))    
         begin
             tftWriteEnable <= ~tftWriteEnable;
             if (tftWriteEnable)
@@ -254,32 +250,22 @@ module ILI9341_8080_I_Driver(
                 tftParallelPort <= (MSB & (state == SEND_DATA)) ? 
                                        memVal[15:8] :
                                        memVal[7:0];    
-    
-                tftDataCmd <= ~dataOrCmd;
-                dataSent <= 'b1;        // TODO: what do I do with this?
-
             end
             else begin
             /// then:
             ///      bring writeEnable high again (handled above).
-            /// toggle whether or not MSB is being sent.
+            /// toggle whether or not upper or lower pixel bits are being sent.
                 MSB <= ~MSB;
     
-            /// Increment to next mem address once when data is sent and
             /// increment to next mem address every two bytes when sending
             /// pixel data.
-                memAddr <= (dataSent) ? 
-                                (state == SEND_DATA) ?
-                                    (MSB) ?
-                                        memAddr + 'b1 :
-                                        memAddr             :
-                                    memAddr + 'b1 :
-                                memAddr;
-
+                memAddr <= (state == SEND_DATA) ?
+                               (MSB) ?
+                                   memAddr + 'b1 :
+                                   memAddr             :
+                               memAddr + 'b1 :
                 dataSent <= 'b0;
             end
-
-
         end
         else
         begin
