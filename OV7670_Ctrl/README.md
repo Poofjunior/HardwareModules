@@ -54,6 +54,20 @@ as follows:
 Data should be captured on the rising edge of thi PCLK signal. This clock 
 signal is a derivative of the input XCLK signal fed into the OV7670.
 
+### SCCB Details
+SCCB is a "functional equivalent" to Philips' I2C interface, though there may 
+be some subtle differences. (I don't think clock-stretching is implemented.)
+If you're planning to write your own driver, keep in mind that the default
+built-in I2C peripheral for you microcontroller may not work "out-of-the-box"
+because it may also be doing additional checks for ACK/NACKs sent from the 
+slave and freeze if these aren't present. I suspect this is the case since
+numerous people have tried (including Jorge) to get the default I2C peripheral
+working with SCCB, but haven't managed to get it to work. If you can disable
+some of those aformentioned "checks," you may be able to get your I2C 
+peripheral working with the OV7670's SCCB interface.
+
+For this driver, since everything is handled by the FPGA, I wrote a quick state 
+machine that emulates an SCCB transfer.
 
 
 
