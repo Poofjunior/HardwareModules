@@ -6,17 +6,20 @@
 `include <filePaths.sv>
 
 
-module ILI9341_MCU_Parallel_Ctrl( input logic CLK_I, RST_I, 
+module ILI9341_MCU_Parallel_Ctrl( input logic clk, reset, 
     output logic [7:0] tftParallelPort,
-    output logic tftChipSelect, tftWriteEnable, tftReset, 
-                 tftDataCmd);
+    output logic tftChipSelect, tftWriteEnable, tftReset, tftDataCmd);
 
+    logic slowClk;
     logic [15:0] pixelDataIn;   
     logic [16:0] pixelAddr; // large enough for 320*240 = 76800 pixel addresses
 
+    clkDiv clkDivInst (.clk(clk), .reset(reset), .divInput(8'b0), 
+                       .slowClk(slowClk));                                          
+               
 
 
-    ILI9341_8080_I_Driver driverInst( .clk(CLK_I), .reset(RST_I),
+    ILI9341_8080_I_Driver driverInst( .clk(slowClk), .reset(reset),
                                .newFrameStrobe(1'b0), 
                                .dataReady(1'b1),
                                 .pixelDataIn(pixelDataIn), 
@@ -79,8 +82,6 @@ module ILI9341_8080_I_Driver(
     logic delayOff;
     assign delayOff = &(~delayTicks);
 
-/// indicates when to load new data onto parallel bus.
-    logic dataSent; 
 
     logic [16:0] memAddr;
     logic [16:0] lastAddr;
@@ -174,6 +175,8 @@ module ILI9341_8080_I_Driver(
                 /// SEND_INIT_PARAMS state not evaluated until delayTicks == 0.
                 SEND_INIT_PARAMS:        
                 begin
+                    /// Keep reset high
+                    tftReset <=  'b1;   
                     /// Initialize transmission with ILI9341.
                     tftChipSelect <= 'b0;
                     memVal <= initParamData[7:0];
@@ -185,6 +188,8 @@ module ILI9341_8080_I_Driver(
                 end
                 WAIT_TO_SEND:
                 begin
+                    /// Keep reset high
+                    tftReset <=  'b1;   
                     /// Cease transmission with ILI9341.
                     tftChipSelect <= 'b1;
                     delayTicks <= MS_120;
@@ -192,6 +197,8 @@ module ILI9341_8080_I_Driver(
                 end
                 SEND_PIXEL_LOC:        
                 begin
+                    /// Keep reset high
+                    tftReset <=  'b1;   
                     /// Reinitialize transmission with ILI9341.
                     tftChipSelect <= 'b0;
                     memVal <= pixelLocData[7:0];
@@ -203,6 +210,8 @@ module ILI9341_8080_I_Driver(
                 end
                 SEND_DATA:        
                 begin
+                    /// Keep reset high
+                    tftReset <=  'b1;   
                     memVal <= pixelDataIn; 
 
                     tftDataCmd <= 1'b1;   /// Only send data from this point on
@@ -216,6 +225,8 @@ module ILI9341_8080_I_Driver(
                 end
                 DONE:
                 begin
+                    /// Keep reset high
+                    tftReset <=  'b1;   
                     state <= SEND_PIXEL_LOC;
                     /// Cease transmission with ILI9341.
                     tftChipSelect <= 'b1;
@@ -224,6 +235,7 @@ module ILI9341_8080_I_Driver(
         end
         else
             delayTicks <= delayTicks - 'b1;
+            /// delayTicks only decrements if it is nonzero.
     end
 
 
@@ -233,9 +245,8 @@ module ILI9341_8080_I_Driver(
     begin
         if (reset | resetMemAddr | delayTicks | newFrameStrobe)
         begin
-            memAddr <= 'b0;
+            memAddr <= 8'b0;
             tftWriteEnable <= 1'b1;
-            dataSent <= 1'b0;
             MSB <= 1'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
@@ -261,16 +272,14 @@ module ILI9341_8080_I_Driver(
             /// pixel data.
                 memAddr <= (state == SEND_DATA) ?
                                (MSB) ?
-                                   memAddr + 'b1 :
-                                   memAddr             :
-                               memAddr + 'b1 :
-                dataSent <= 'b0;
+                                   memAddr + 8'b1 :
+                                   memAddr        :
+                               memAddr + 8'b1 ;
             end
         end
         else
         begin
             tftWriteEnable <= 'b1;
-            dataSent <= 'b0;
         end
     end
 endmodule
@@ -301,3 +310,38 @@ module pixelData(  input logic [16:0] memAddress,
     (* ram_init_file = "pixelData.mif" *) logic [15:0] mem [0:76799];
     assign memData = mem[memAddress];
 endmodule
+
+                                                                                
+module clkDiv( input logic clk, reset,                                          
+               input logic [7:0] divInput,      // clock divisor                
+              output logic slowClk);                                            
+                                                                                
+    logic [7:0] divisor;    /// divisor (aka: divInput) should never be 0.         
+    logic countMatch;                                                           
+    logic [7:0] count;                                                          
+                                                                                
+    assign countMatch = (divisor == count);                                     
+                                                                                
+    always_ff @ (posedge clk)                                                   
+    begin                                                                       
+        divisor <= divInput;                                                    
+    end                                                                         
+                                                                                
+    always_ff @ (posedge clk)                                                   
+    begin                                                                       
+        if (reset | countMatch )  // count reset must be synchronous.           
+            count <= 8'b00000000;                                               
+        else                                                                    
+            count <= count + 8'b00000001;                                       
+    end                                                                         
+                                                                                
+    always_ff @ (posedge clk, posedge reset)                                    
+    if (reset)                                                                  
+            slowClk <= 'b0;                                                     
+    else                                                                        
+    begin                                                                       
+            slowClk <= (countMatch) ?                                           
+                            ~slowClk :                                          
+                            slowClk;                                            
+    end                                                                         
+endmodule                           

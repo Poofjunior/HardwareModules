@@ -60,14 +60,9 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 
 
-set_location_assignment PIN_R8 -to CLK_I
-set_location_assignment PIN_J15 -to RST_I
 
-set_location_assignment PIN_E10 -to tftMosi
-set_location_assignment PIN_D11 -to tftChipSelect
-set_location_assignment PIN_D9 -to tftSck
-set_location_assignment PIN_A12 -to dataCtrl
-set_location_assignment PIN_C11 -to tftReset
+set_location_assignment PIN_A4 -to tftChipSelect
+set_location_assignment PIN_A5 -to tftReset
 set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
 set_global_assignment -name MIF_FILE pixelLocParams.mif
 set_global_assignment -name MIF_FILE pixelData.mif
@@ -76,4 +71,16 @@ set_global_assignment -name SYSTEMVERILOG_FILE ILI9341_MCU_Parallel_Ctrl.sv
 set_global_assignment -name SYSTEMVERILOG_FILE SPI_MasterWishbone.sv
 set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
 
+set_location_assignment PIN_D3 -to tftParallelPort[7]
+set_location_assignment PIN_C3 -to tftParallelPort[6]
+set_location_assignment PIN_A3 -to tftParallelPort[5]
+set_location_assignment PIN_B4 -to tftParallelPort[4]
+set_location_assignment PIN_B5 -to tftParallelPort[3]
+set_location_assignment PIN_D6 -to tftParallelPort[2]
+set_location_assignment PIN_A6 -to tftParallelPort[1]
+set_location_assignment PIN_D5 -to tftParallelPort[0]
+set_location_assignment PIN_B3 -to tftDataCmd
+set_location_assignment PIN_R8 -to clk
+set_location_assignment PIN_J15 -to reset
+set_location_assignment PIN_A2 -to tftWriteEnable
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

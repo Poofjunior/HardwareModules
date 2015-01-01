@@ -28,6 +28,10 @@ the memData.mif file directly.
 Configuration Data is stored in a 9-bit wide address. Setting the MSbit (bit 8) 
 indicates that the 8-bit value is a command, not data.
 
+## Development
+From the ILI9341 datasheet, a single write cycle is shown below:
+
+
 TODO
 ====
 Possibly make this module wishbone-compatible.
