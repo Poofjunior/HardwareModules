@@ -1,4 +1,4 @@
-DEPTH=96;
+DEPTH=95;
 WIDTH=9;
 
 ADDRESS_RADIX=HEX;
@@ -102,5 +102,5 @@ CONTENT BEGIN
 	5C :   036;
 	5D :   00F;
 	5E :   111;     -- Sleep Out
-	5F :   129;     -- Display On
+--- 5F :   129;     -- Display On
 END;

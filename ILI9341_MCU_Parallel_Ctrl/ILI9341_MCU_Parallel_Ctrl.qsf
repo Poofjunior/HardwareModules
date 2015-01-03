@@ -76,9 +76,9 @@ set_location_assignment PIN_C3 -to tftParallelPort[6]
 set_location_assignment PIN_A3 -to tftParallelPort[5]
 set_location_assignment PIN_B4 -to tftParallelPort[4]
 set_location_assignment PIN_B5 -to tftParallelPort[3]
-set_location_assignment PIN_D6 -to tftParallelPort[2]
+set_location_assignment PIN_D5 -to tftParallelPort[2]
 set_location_assignment PIN_A6 -to tftParallelPort[1]
-set_location_assignment PIN_D5 -to tftParallelPort[0]
+set_location_assignment PIN_D6 -to tftParallelPort[0]
 set_location_assignment PIN_B3 -to tftDataCmd
 set_location_assignment PIN_R8 -to clk
 set_location_assignment PIN_J15 -to reset

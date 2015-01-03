@@ -61,11 +61,11 @@ module ILI9341_8080_I_Driver(
 
 //// BEGIN: CONSTANTS 
 /// number of values in the memory containing all of the initialization values.
-    parameter NUM_INIT_PARAMS = 96;
+    parameter NUM_INIT_PARAMS = 95;
 
 /// number of values in the memory containing the data sent at the start of a 
 /// new frame.
-    parameter NUM_FRAME_START_PARAMS = 11;
+    parameter NUM_FRAME_START_PARAMS = 12;
 
 /// Total number of pixels.
     parameter NUM_PIXELS = 76800;
@@ -74,6 +74,7 @@ module ILI9341_8080_I_Driver(
 
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
+    parameter MS_5 = 250000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
 //// END: CONSTANTS 
 
@@ -116,9 +117,14 @@ module ILI9341_8080_I_Driver(
 /// pixelAddr is basically memAddr once initialization is finished.
     assign pixelAddr = memAddr;
 
-    typedef enum logic [2:0] {INIT, HOLD_RESET, SEND_INIT_PARAMS, WAIT_TO_SEND,
-                              SEND_PIXEL_LOC, SEND_DATA, DONE} 
+    typedef enum logic [3:0] {INIT, TRANSFER_SYNC, HOLD_RESET, SEND_INIT_PARAMS, 
+                              WAIT_TO_SEND, SEND_PIXEL_LOC, SEND_DATA, DONE} 
                              stateType;
+/*
+    typedef enum logic [2:0] {INIT, HOLD_RESET, SEND_INIT_PARAMS, 
+                              WAIT_TO_SEND, SEND_PIXEL_LOC, SEND_DATA, DONE} 
+                             stateType;
+*/
     stateType state;
 
 /// Logic for resetMemAddr
@@ -131,7 +137,8 @@ module ILI9341_8080_I_Driver(
         else 
         begin
             resetMemAddr <= (memAddr == lastAddr) & 
-                            ((state == SEND_INIT_PARAMS) | 
+                            //((state == TRANSFER_SYNC) | 
+                             ((state == SEND_INIT_PARAMS) | 
                              (state == SEND_PIXEL_LOC) | 
                              (state == SEND_DATA));
         end
@@ -167,16 +174,31 @@ module ILI9341_8080_I_Driver(
                 HOLD_RESET:
                 begin
                     /// Pull reset up again to release.
-                    tftReset <=  'b1;   
+                    tftReset <=  1'b1;   
                     /// Wait additional 120 ms.
                     delayTicks <= MS_120;  
                     state <= SEND_INIT_PARAMS;
+                    //state <= TRANSFER_SYNC;
                 end
+/*
+                TRANSFER_SYNC:
+                begin
+                    /// Pull reset up again to release.
+                    tftReset <=  1'b1;   
+                    /// Send a Command.
+                    tftDataCmd <= 1'b0;
+                    memVal <= 8'b0;
+                    lastAddr <= 3;
+                    state <= (memAddr == 3) ?
+                                SEND_INIT_PARAMS:
+                                TRANSFER_SYNC;
+                end
+*/
                 /// SEND_INIT_PARAMS state not evaluated until delayTicks == 0.
                 SEND_INIT_PARAMS:        
                 begin
                     /// Keep reset high
-                    tftReset <=  'b1;   
+                    tftReset <=  1'b1;   
                     /// Initialize transmission with ILI9341.
                     tftChipSelect <= 'b0;
                     memVal <= initParamData[7:0];
@@ -231,6 +253,7 @@ module ILI9341_8080_I_Driver(
                     /// Cease transmission with ILI9341.
                     tftChipSelect <= 'b1;
                 end
+                //default: state <= INIT;
             endcase
         end
         else
@@ -258,6 +281,8 @@ module ILI9341_8080_I_Driver(
             /// simultaneously: 
             ///     bring writeEnable low (handled above)
             ///     load data onto parallel port
+/// FIXME: adding in the register tftParallelPort delays the output by one 
+/// additional register, which is bad...
                 tftParallelPort <= (MSB & (state == SEND_DATA)) ? 
                                        memVal[15:8] :
                                        memVal[7:0];    
@@ -268,8 +293,8 @@ module ILI9341_8080_I_Driver(
             /// toggle whether or not upper or lower pixel bits are being sent.
                 MSB <= ~MSB;
     
-            /// increment to next mem address every two bytes when sending
-            /// pixel data.
+            /// Only increment to next mem address every two bytes when sending
+            /// pixel data; otherwise, increment mem address once per transfer.
                 memAddr <= (state == SEND_DATA) ?
                                (MSB) ?
                                    memAddr + 8'b1 :
@@ -289,7 +314,7 @@ endmodule
 module initParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/memData.mif) *) logic [8:0] mem [0:88];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/memData.mif) *) logic [8:0] mem [0:94];
     assign memData = mem[memAddress];
 
 endmodule
@@ -298,7 +323,7 @@ endmodule
 module pixelStartParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/pixelStartParams.mif) *) logic [8:0] mem [0:10];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/pixelStartParams.mif) *) logic [8:0] mem [0:11];
     assign memData = mem[memAddress];
 
 endmodule
@@ -310,6 +335,8 @@ module pixelData(  input logic [16:0] memAddress,
     (* ram_init_file = "pixelData.mif" *) logic [15:0] mem [0:76799];
     assign memData = mem[memAddress];
 endmodule
+
+
 
                                                                                 
 module clkDiv( input logic clk, reset,                                          
