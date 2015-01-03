@@ -14,7 +14,9 @@ module ILI9341_MCU_Parallel_Ctrl( input logic clk, reset,
     logic [15:0] pixelDataIn;   
     logic [16:0] pixelAddr; // large enough for 320*240 = 76800 pixel addresses
 
-    clkPrescaler clkPrescalerInst(.clk(clk), .reset(reset), .divInput(8'b0), 
+/// Do not wire this module to external reset because it clocks the behavior
+/// of the rest of the internal logic
+    clkPrescaler clkPrescalerInst(.clk(clk), .reset(1'b0), .divInput(8'b0), 
                        .slowClk(slowClk));                                          
                
 
@@ -179,6 +181,7 @@ module ILI9341_8080_I_Driver(
                     state <= (memAddr == 3) ?
                                 SEND_INIT_PARAMS:
                                 TRANSFER_SYNC;
+                    //delayTicks <= MS_5;  
                 end
                 /// SEND_INIT_PARAMS state not evaluated until delayTicks == 0.
                 SEND_INIT_PARAMS:        
@@ -236,7 +239,15 @@ module ILI9341_8080_I_Driver(
                     /// Cease transmission with ILI9341.
                     tftChipSelect <= 'b1;
                 end
-                default: state <= INIT;
+                default: 
+                begin
+                    state <= INIT;
+                    tftDataCmd <= 'b0;
+                    tftReset <=  'b1;   
+                    tftChipSelect <= 'b1;
+                    delayTicks <= 0;
+                    lastAddr <= NUM_INIT_PARAMS;
+                end
             endcase
         end
         else
