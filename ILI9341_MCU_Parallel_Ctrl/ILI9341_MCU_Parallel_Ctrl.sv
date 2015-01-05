@@ -63,18 +63,20 @@ module ILI9341_8080_I_Driver(
         output logic tftDataCmd); 
 
 /// Custom "stateType" for the Finite-State Machine
-    typedef enum logic [3:0] {INIT, TRANSFER_SYNC, HOLD_RESET, SEND_INIT_PARAMS, 
-                              WAIT_TO_SEND, SEND_PIXEL_LOC, SEND_DATA, DONE} 
+    typedef enum logic [3:0] {INIT, TRANSFER_SYNC, TRANSFER_SYNC_DELAY, 
+                              HOLD_RESET, ENABLE_DISPLAY, ENABLE_DISPLAY_DELAY,
+                              SEND_INIT_PARAMS, WAIT_TO_SEND, SEND_PIXEL_LOC, 
+                              SEND_DATA, DONE} 
                              stateType;
 
 
 /// ---- BEGIN: CONSTANTS ----
 /// number of values in the memory containing all of the initialization values.
-    parameter NUM_INIT_PARAMS = 95;
+    parameter NUM_INIT_PARAMS = 29;
 
 /// number of values in the memory containing the data sent at the start of a 
 /// new frame.
-    parameter NUM_FRAME_START_PARAMS = 12;
+    parameter NUM_FRAME_START_PARAMS = 11;
 
 /// Total number of pixels.
     parameter NUM_PIXELS = 76800;
@@ -130,6 +132,7 @@ module ILI9341_8080_I_Driver(
         else begin
             resetMemAddr <= (memAddr == lastAddr) & 
                              ((state == TRANSFER_SYNC) | 
+                             (state == ENABLE_DISPLAY) | 
                              (state == SEND_INIT_PARAMS) | 
                              (state == SEND_PIXEL_LOC) | 
                              (state == SEND_DATA));
@@ -175,13 +178,21 @@ module ILI9341_8080_I_Driver(
                 begin
                     /// Pull reset up again to release.
                     tftReset <=  1'b1;   
+                    /// Bring ChipSelect Low.
+                    tftChipSelect <= 'b0;
                     /// Send a Command.
                     tftDataCmd <= 1'b0;
                     lastAddr <= 3;
                     state <= (memAddr == 3) ?
-                                SEND_INIT_PARAMS:
+                                TRANSFER_SYNC_DELAY:
                                 TRANSFER_SYNC;
-                    //delayTicks <= MS_5;  
+                end
+                TRANSFER_SYNC_DELAY:
+                begin
+                    /// Initialize transmission with ILI9341.
+                    tftChipSelect <= 'b1;
+                    delayTicks <= MS_5;
+                    state <= SEND_INIT_PARAMS;
                 end
                 /// SEND_INIT_PARAMS state not evaluated until delayTicks == 0.
                 SEND_INIT_PARAMS:        
@@ -201,7 +212,26 @@ module ILI9341_8080_I_Driver(
                     /// Keep reset high
                     tftReset <=  'b1;   
                     /// Cease transmission with ILI9341.
-                    tftChipSelect <= 'b1;
+                    tftChipSelect <= 1'b1;
+                    delayTicks <= MS_120;
+                    //state <= SEND_PIXEL_LOC;
+                    state <= ENABLE_DISPLAY;
+                end
+                ENABLE_DISPLAY:
+                begin
+                    /// Pull reset up again to release.
+                    tftReset <=  1'b1;   
+                    /// Initialize transmission with ILI9341.
+                    tftChipSelect <= 1'b0;
+                    /// Send a Command.
+                    tftDataCmd <= 1'b0;
+                    lastAddr <= 0;
+                    state <= ENABLE_DISPLAY_DELAY;
+                end
+                ENABLE_DISPLAY_DELAY:
+                begin
+                    /// Pull reset up again to release.
+                    tftReset <=  1'b1;   
                     delayTicks <= MS_120;
                     state <= SEND_PIXEL_LOC;
                 end
@@ -269,7 +299,7 @@ module ILI9341_8080_I_Driver(
             MSB <= 1'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
-                 (state == TRANSFER_SYNC) |
+                 (state == TRANSFER_SYNC) | (state == ENABLE_DISPLAY) | 
                  ((state == SEND_DATA) & dataReady))    
         begin
             tftWriteEnable <= ~tftWriteEnable;
@@ -287,6 +317,10 @@ module ILI9341_8080_I_Driver(
                     (SEND_INIT_PARAMS):
                     begin
                         tftParallelPort <= initParamData[7:0];
+                    end
+                    (ENABLE_DISPLAY):
+                    begin
+                        tftParallelPort <= 8'h29;
                     end
                     (SEND_PIXEL_LOC):
                     begin
@@ -323,6 +357,7 @@ module ILI9341_8080_I_Driver(
         else
         begin
             tftWriteEnable <= 'b1;
+            memAddr <= memAddr;
         end
     end
 endmodule
@@ -336,7 +371,7 @@ endmodule
 module initParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/memData.mif) *) logic [8:0] mem [0:94];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/memData.mif) *) logic [8:0] mem [0:29];
     assign memData = mem[memAddress];
 
 endmodule
@@ -348,7 +383,7 @@ endmodule
 module pixelStartParams(  input logic [6:0] memAddress,
                    output logic [8:0] memData);
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/pixelStartParams.mif) *) logic [8:0] mem [0:11];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(ILI9341_MCU_Parallel_Ctrl/pixelStartParams.mif) *) logic [8:0] mem [0:10];
     assign memData = mem[memAddress];
 
 endmodule

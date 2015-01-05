@@ -1,10 +1,11 @@
-DEPTH=95;
+DEPTH=29;
 WIDTH=9;
 
 ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
 
 CONTENT BEGIN
+%
 	00  :   1CF;    -- Power Control B
 	01  :   000;
 	02  :   0C1;
@@ -33,10 +34,10 @@ CONTENT BEGIN
 	1A  :   1C1;    -- Power Control 2
 	1B  :   010;
 	1C  :   1C5;    -- VCOM Control 1
-	1D  :   03E;
-	1E  :   028;
+	1D  :   02B;
+	1E  :   02B;
 	1F  :   1C7;    -- VCOM Control 2
-	20  :   086;
+	20  :   0C0;
 	21  :   136;    -- Memory Access Control (MADCTL) reg
 	22  :   020;    -- invert row/col order to 320 x 240 instead of 240 x 320.
                     -- Column min/max addrs must be changed following this change.
@@ -56,7 +57,7 @@ CONTENT BEGIN
 	2E  :   055;    -- MCU and Serial interface both set to RGB565
 	2F  :   1B1;    -- Frame Rate
 	30  :   000;    -- 
-	31  :   018;    -- 79 clocks per line
+	31  :   01B;    -- 70 clocks per line
 	32  :   1B6;    -- Display Function Control
 	33  :   008;    -- 
 	34  :   082;
@@ -102,5 +103,37 @@ CONTENT BEGIN
 	5C :   036;
 	5D :   00F;
 	5E :   111;     -- Sleep Out
---- 5F :   129;     -- Display On
+%
+	00  :   1C0;    -- Power Control 1
+	01  :   023;
+	02  :   1C1;    -- Power Control 2
+	03  :   010;
+	04  :   1C5;    -- VCOM Control 1
+	05  :   02B;
+	06  :   02B;
+	07  :   1C7;    -- VCOM Control 2
+	08  :   0C0;
+	09  :   136;    -- Memory Access Control (MADCTL) reg
+	0A  :   020;    -- invert row/col order to 320 x 240 instead of 240 x 320.
+                 -- Column min/max addrs must be changed following this change.
+    0B  :   12A;    -- Column Address Set reg (EC should be changed to 0x013F)
+    0C  :   000;    -- Column Address Data SC[15:8]
+    0D  :   000;    -- Column Address Data SC[7:0]
+    0E  :   001;    -- Column Address Data EC[15:8]
+    0F  :   03F;    -- Column Address Data EC[7:0]
+
+    10  :   12B;    -- Row Address Set reg (EP should be changed to 0x00EF)
+    11  :   000;    -- Row Address Data SP[15:8]
+    12  :   000;    -- Row Address Data SP[7:0]
+    13  :   000;    -- Row Address Data EP[15:8]
+    14  :   0EF;    -- Row Address Data EP[7:0]
+
+	15  :   13A;    -- Pixel Format Set
+	16  :   055;    -- MCU and Serial interface both set to RGB565
+	17  :   1B1;    -- Frame Rate
+	18  :   000;    -- 
+	19  :   01B;    -- 70 clocks per line
+    1A  :   1B7;
+    1B  :   007;
+    1C  :   111;    -- Sleep Out
 END;

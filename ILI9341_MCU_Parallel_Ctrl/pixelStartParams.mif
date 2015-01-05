@@ -1,23 +1,22 @@
-DEPTH = 12;
+DEPTH = 11;
 WIDTH = 9;
 
 ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
 
 CONTENT BEGIN   -- <Memory Address> : <Data>
-    00  :   129; -- DisplayOn Cmd. (really only needs to be sent once.)
-    01  :   12A; 
+    00  :   12A; 
+    01  :   00;
     02  :   00;
-    03  :   00;
-    04  :   01;
-    05  :   3F;
+    03  :   01;
+    04  :   3F;
     
-    06  :   12B;
+    05  :   12B;
+    06  :   00;
     07  :   00;
     08  :   00;
-    09  :   00;
-    0A  :   EF;
+    09  :   EF;
 
-    0B  :   12C;
+    0A  :   12C;
     
 END;
