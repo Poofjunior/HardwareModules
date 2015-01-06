@@ -1,7 +1,7 @@
 /**
  * ILI9341_Ctrl
  * Joshua Vasquez
- * December 24, 2014
+ * December 24 - January 5, 2014
  */
 `include <filePaths.sv>
 
@@ -16,7 +16,7 @@ module ILI9341_MCU_Parallel_Ctrl( input logic clk, reset,
 
 /// Do not wire this module to external reset because it clocks the behavior
 /// of the rest of the internal logic
-    clkPrescaler clkPrescalerInst(.clk(clk), .reset(1'b0), .divInput(8'b0), 
+    clkPrescaler clkPrescalerInst(.clk(clk), .reset(1'b0), .divInput(8'b100), 
                        .slowClk(slowClk));                                          
                
 
@@ -82,9 +82,14 @@ module ILI9341_8080_I_Driver(
     parameter NUM_PIXELS = 76800;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
+    /*
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_5 = 250000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
+    */
+    parameter MS_120 = 600000; // 120 MS in clock ticks at 50 MHz
+    parameter MS_5 = 25000; // 120 MS in clock ticks at 50 MHz
+    parameter MS_FOR_RESET = 1000000;  // delay time in clock ticks for reset
 /// ---- END: CONSTANTS ----
 
 
@@ -116,7 +121,7 @@ module ILI9341_8080_I_Driver(
 /// indicates whether upper or lower byte of 16-bit data is being transferred
     logic MSB;
 
-    stateType state;
+    stateType state, nextState;
 ///---- END: INTERNAL LOGIC ----
 
 /// pixelAddr is basically memAddr once initialization is finished.
@@ -124,170 +129,155 @@ module ILI9341_8080_I_Driver(
     assign delayOff = &(~delayTicks);
 
 
-/// Logic for resetMemAddr
-    always_ff @ (posedge clk)
-    begin
-        if (reset)
-            resetMemAddr <= 'b1;
-        else begin
-            resetMemAddr <= (memAddr == lastAddr) & 
-                             ((state == TRANSFER_SYNC) | 
-                             (state == ENABLE_DISPLAY) | 
-                             (state == SEND_INIT_PARAMS) | 
-                             (state == SEND_PIXEL_LOC) | 
-                             (state == SEND_DATA));
-        end
-    end
 
-/// ---- BEGIN: FSM ----
+/// ---- State Register with delays at key states ----
     always_ff @ (posedge clk)
     begin
         if (reset)
         begin
             state <= INIT;
-            delayTicks <= 'b0;
-            lastAddr <= NUM_INIT_PARAMS;
-            tftDataCmd <= 1'b0;
-            tftReset <= 'b1;
-            tftChipSelect <= 'b1;
+            delayTicks <= MS_FOR_RESET;
         end
-        else if (delayOff) 
+        else if (delayOff)
         begin
+            state <= nextState;
             case (state)
-                INIT: 
-                begin
-                    /// Load starting byte of parallel bus data. 
-                    tftDataCmd <= ~initParamData[8];
-                    /// Pull reset low to trigger a reset, and delay before 
-                    /// triggering next state.
-                    tftReset <=  'b0;   
-                    delayTicks <= MS_FOR_RESET;
-                    state <= HOLD_RESET;
-                end
-                /// HOLD_RESET state not evaluated until delayTicks == 0.
-                HOLD_RESET:
-                begin
-                    /// Pull reset up again to release.
-                    tftReset <=  1'b1;   
-                    /// Wait additional 120 ms.
-                    delayTicks <= MS_120;  
-                    //state <= SEND_INIT_PARAMS;
-                    state <= TRANSFER_SYNC;
-                end
-                TRANSFER_SYNC:
-                begin
-                    /// Pull reset up again to release.
-                    tftReset <=  1'b1;   
-                    /// Bring ChipSelect Low.
-                    tftChipSelect <= 'b0;
-                    /// Send a Command.
-                    tftDataCmd <= 1'b0;
-                    lastAddr <= 3;
-                    state <= (memAddr == 3) ?
-                                TRANSFER_SYNC_DELAY:
-                                TRANSFER_SYNC;
-                end
-                TRANSFER_SYNC_DELAY:
-                begin
-                    /// Initialize transmission with ILI9341.
-                    tftChipSelect <= 'b1;
-                    delayTicks <= MS_5;
-                    state <= SEND_INIT_PARAMS;
-                end
-                /// SEND_INIT_PARAMS state not evaluated until delayTicks == 0.
-                SEND_INIT_PARAMS:        
-                begin
-                    /// Keep reset high
-                    tftReset <=  1'b1;   
-                    /// Initialize transmission with ILI9341.
-                    tftChipSelect <= 'b0;
-                    tftDataCmd <= ~initParamData[8];
-                    lastAddr <= NUM_INIT_PARAMS;
-                    state <= (memAddr == NUM_INIT_PARAMS) ?
-                                WAIT_TO_SEND :
-                                SEND_INIT_PARAMS;
-                end
-                WAIT_TO_SEND:
-                begin
-                    /// Keep reset high
-                    tftReset <=  'b1;   
-                    /// Cease transmission with ILI9341.
-                    tftChipSelect <= 1'b1;
-                    delayTicks <= MS_120;
-                    //state <= SEND_PIXEL_LOC;
-                    state <= ENABLE_DISPLAY;
-                end
-                ENABLE_DISPLAY:
-                begin
-                    /// Pull reset up again to release.
-                    tftReset <=  1'b1;   
-                    /// Initialize transmission with ILI9341.
-                    tftChipSelect <= 1'b0;
-                    /// Send a Command.
-                    tftDataCmd <= 1'b0;
-                    lastAddr <= 0;
-                    state <= ENABLE_DISPLAY_DELAY;
-                end
-                ENABLE_DISPLAY_DELAY:
-                begin
-                    /// Pull reset up again to release.
-                    tftReset <=  1'b1;   
-                    delayTicks <= MS_120;
-                    state <= SEND_PIXEL_LOC;
-                end
-                SEND_PIXEL_LOC:        
-                begin
-                    /// Keep reset high
-                    tftReset <=  'b1;   
-                    /// Reinitialize transmission with ILI9341.
-                    tftChipSelect <= 'b0;
-                    tftDataCmd <= ~pixelLocData[8];
-                    lastAddr <= NUM_FRAME_START_PARAMS;
-                    state <= (memAddr == NUM_FRAME_START_PARAMS) ? 
-                                SEND_DATA :
-                                SEND_PIXEL_LOC;
-                end
-                SEND_DATA:        
-                begin
-                    /// Keep reset high
-                    tftReset <=  'b1;   
-                    /// Only send data from this point on
-                    tftDataCmd <= 1'b1;   
-                    lastAddr <= NUM_PIXELS;
-                    /// reset pixel location to beginning if strobed.
-                    state <= newFrameStrobe ?
-                                SEND_PIXEL_LOC :
-                                (memAddr == NUM_PIXELS) ? 
-                                    DONE:
-                                    SEND_DATA;
-                end
-                DONE:
-                begin
-                    /// Keep reset high
-                    tftReset <=  'b1;   
-                    state <= SEND_PIXEL_LOC;
-                    /// Cease transmission with ILI9341.
-                    tftChipSelect <= 'b1;
-                end
-                default: 
-                begin
-                    state <= INIT;
-                    tftDataCmd <= 'b0;
-                    tftReset <=  'b1;   
-                    tftChipSelect <= 'b1;
-                    delayTicks <= 0;
-                    lastAddr <= NUM_INIT_PARAMS;
-                end
+                INIT: delayTicks <= MS_FOR_RESET;
+                HOLD_RESET: delayTicks <= MS_120;  
+                TRANSFER_SYNC_DELAY: delayTicks <= MS_5;
+                ENABLE_DISPLAY_DELAY: delayTicks <= MS_120;
+                WAIT_TO_SEND: delayTicks <= MS_120;
+                WAIT_TO_SEND: delayTicks <= MS_120;
+            default: delayTicks <= 'b0;
             endcase
         end
         else
-            delayTicks <= delayTicks - 'b1;
-            /// Note: delayTicks only decrements if it is nonzero.
+            delayTicks <= delayTicks - 'b1; 
     end
-/// ---- END: FSM ----
 
 
-/// Logic block for incrementing memAddr and strobing data on MCU parallel port
+/// ---- Next-State Logic ----
+    always_comb
+        case (state)
+            INIT: nextState = HOLD_RESET;
+            HOLD_RESET: nextState = TRANSFER_SYNC; 
+            TRANSFER_SYNC: nextState = (memAddr == 3) ?
+                                                TRANSFER_SYNC_DELAY:
+                                                TRANSFER_SYNC;
+            TRANSFER_SYNC_DELAY: nextState = SEND_INIT_PARAMS;  
+            SEND_INIT_PARAMS: nextState = (memAddr == NUM_INIT_PARAMS) ?
+                                                WAIT_TO_SEND :
+                                                SEND_INIT_PARAMS;
+            WAIT_TO_SEND: nextState = ENABLE_DISPLAY;
+            ENABLE_DISPLAY: nextState = ENABLE_DISPLAY_DELAY;
+            ENABLE_DISPLAY_DELAY: nextState = SEND_PIXEL_LOC;
+            SEND_PIXEL_LOC: nextState = (memAddr == NUM_FRAME_START_PARAMS) ? 
+                                            SEND_DATA :
+                                            SEND_PIXEL_LOC;
+            SEND_DATA: nextState =  newFrameStrobe ?
+                                        SEND_PIXEL_LOC :
+                                        (memAddr == NUM_PIXELS) ? 
+                                            DONE:
+                                            SEND_DATA;
+            DONE: nextState = SEND_PIXEL_LOC; 
+            default: nextState = INIT;
+        endcase
+
+
+//// ------------ Additional Signals --------------
+
+
+/// ---- resetMemAddr Logic ----
+    always_ff @ (posedge clk)
+    if (reset)
+        resetMemAddr = 1'b1;
+    else if (memAddr == lastAddr)
+        case (state)
+            TRANSFER_SYNC: resetMemAddr = 1'b1;
+            ENABLE_DISPLAY: resetMemAddr = 1'b1;
+            SEND_INIT_PARAMS: resetMemAddr = 1'b1;
+            SEND_PIXEL_LOC: resetMemAddr = 1'b1;
+            SEND_DATA: resetMemAddr = 1'b1;
+        default: resetMemAddr = 1'b0;
+        endcase
+    else 
+        resetMemAddr = 1'b0;
+
+/**
+ * There are a couple of ways to write up the remaining signals. I chose to 
+ * separate them into individual always_ff blocks, (rather than cramming them
+ * into one always_ff block) to emphasize explicitly when a signal will
+ * change, rather than how a signal changes in the context of the other
+ * signals.
+ *
+ * I haven't completely settled on which style I like yet, but I'm following
+ * Clifford E. Cummings' "Sythesizeable Finite State Machine Design Techniques 
+ * Using the New System Verilog 3.0 Enhancements" Conference Paper.
+ */
+
+/// ---- lastAddr Logic ----
+    always_ff @ (posedge clk)
+    if (reset)
+        lastAddr = NUM_INIT_PARAMS;
+    else begin
+        case (state)
+            TRANSFER_SYNC: lastAddr = 3;
+            SEND_INIT_PARAMS: lastAddr = NUM_INIT_PARAMS;
+            ENABLE_DISPLAY: lastAddr = 1;
+            SEND_PIXEL_LOC: lastAddr = NUM_FRAME_START_PARAMS;
+            SEND_DATA: lastAddr = NUM_PIXELS;
+        default: lastAddr = NUM_INIT_PARAMS;
+        endcase
+    end
+
+    always_ff @ (posedge clk)
+    if (reset)
+        tftDataCmd = 1'b0;
+    else begin
+        case (state)
+            INIT:   tftDataCmd = ~initParamData[8];
+            TRANSFER_SYNC: tftDataCmd = 'b0;
+            SEND_INIT_PARAMS:tftDataCmd <= ~initParamData[8]; 
+            ENABLE_DISPLAY: tftDataCmd <= 1'b0;
+            SEND_PIXEL_LOC: tftDataCmd <= ~pixelLocData[8];
+            SEND_DATA: tftDataCmd <= 1'b1;   
+        default: tftDataCmd <= 1'b0;
+        endcase
+    end
+
+/// ---- tftReset Logic ---- 
+    always_ff @ (posedge clk)
+    if (reset)
+        tftReset = 1'b1;
+    else begin
+        case (state)
+            INIT:   tftReset =  'b0;   
+            HOLD_RESET: tftReset =  1'b1;   
+        default: tftReset = 1'b1;
+        endcase
+    end
+
+/// ---- tftChipSelect Logic ---- 
+    always_ff @ (posedge clk)
+    if (reset)
+        tftChipSelect = 1'b1;
+    else begin
+        case (state)
+            TRANSFER_SYNC: tftChipSelect = 'b0;
+            TRANSFER_SYNC_DELAY: tftChipSelect = 'b1;
+            SEND_INIT_PARAMS: tftChipSelect <= 'b0;
+            WAIT_TO_SEND: tftChipSelect = 1'b1;
+            ENABLE_DISPLAY: tftChipSelect = 1'b0;
+            ENABLE_DISPLAY_DELAY: tftChipSelect = 1'b0;
+            SEND_PIXEL_LOC: tftChipSelect = 1'b0;
+            SEND_DATA: tftChipSelect = 1'b0;
+            DONE: tftChipSelect = 1'b1;
+        default: tftChipSelect = 1'b1;
+        endcase
+    end
+
+
+/// Logic for incrementing memAddr and strobing data on MCU parallel port
     always_ff @ (posedge clk)
     begin
         /// reset case:
@@ -302,44 +292,28 @@ module ILI9341_8080_I_Driver(
                  (state == TRANSFER_SYNC) | (state == ENABLE_DISPLAY) | 
                  ((state == SEND_DATA) & dataReady))    
         begin
+            /// Toggle tftWriteEnable Signal.
             tftWriteEnable <= ~tftWriteEnable;
 
             if (tftWriteEnable)
             begin
-            /// simultaneously: 
+            /// Simultaneously: 
             ///     bring writeEnable low (handled above)
-            ///     load data onto parallel port
+            ///     load data onto parallel port (depending on state)
                 case (state)
-                    (TRANSFER_SYNC):
-                    begin
-                        tftParallelPort <= 8'b0;
-                    end
-                    (SEND_INIT_PARAMS):
-                    begin
-                        tftParallelPort <= initParamData[7:0];
-                    end
-                    (ENABLE_DISPLAY):
-                    begin
-                        tftParallelPort <= 8'h29;
-                    end
-                    (SEND_PIXEL_LOC):
-                    begin
-                        tftParallelPort <= pixelLocData[7:0];
-                    end
-                    (SEND_DATA):
-                    begin
-                        tftParallelPort <= MSB ? 
-                                            pixelDataIn[15:8] :
-                                            pixelDataIn[7:0];    
-                    end
+                    TRANSFER_SYNC:    tftParallelPort <= 8'b0;
+                    SEND_INIT_PARAMS: tftParallelPort <= initParamData[7:0];
+                    ENABLE_DISPLAY:   tftParallelPort <= 8'h29;
+                    SEND_PIXEL_LOC:   tftParallelPort <= pixelLocData[7:0];
+                    SEND_DATA:        tftParallelPort <= MSB ? 
+                                                            pixelDataIn[15:8] :
+                                                            pixelDataIn[7:0];    
                 default: 
-                begin
                     tftParallelPort <= initParamData[7:0];
-                end
                 endcase
             end
             else begin
-            /// then:
+            /// Then:
             ///      bring writeEnable high again (handled above) and toggle 
             ///     whether or not upper or lower pixel bits are being sent.
                 MSB <= ~MSB;
@@ -354,8 +328,7 @@ module ILI9341_8080_I_Driver(
                                memAddr + 17'b1 ;
             end
         end
-        else
-        begin
+        else begin
             tftWriteEnable <= 'b1;
             memAddr <= memAddr;
         end
