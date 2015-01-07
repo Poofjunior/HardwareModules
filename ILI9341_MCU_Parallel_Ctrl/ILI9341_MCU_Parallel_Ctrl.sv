@@ -1,7 +1,7 @@
 /**
  * ILI9341_Ctrl
  * Joshua Vasquez
- * December 24 - January 5, 2014
+ * December 24 2014 - January 5, 2015
  */
 `include <filePaths.sv>
 
