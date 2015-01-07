@@ -1,7 +1,7 @@
 /**
  * OV7670_Ctrl
  * Joshua Vasquez
- * December 5, 2014
+ * December 5, 2014 - January 5, 2015
  */
 
 `include <filePaths.sv>
@@ -17,58 +17,39 @@ module OV7670_Stream( /// Camera inputs
                      output logic sda, scl,
                      output logic OV7670_Xclk,
                      /// Screen outputs
-                     output logic tftChipSelect, tftMosi, tftSck, tftReset,
-                     output logic dataCtrl,
-                     output logic debug);
+                     output logic [7:0] tftParallelPort,
+                     output logic tftChipSelect, tftWriteEnable, tftReset,
+                     output logic tftDataCmd);
+                     
 logic buttonReset;
 assign buttonReset = ~reset;
 
-logic clk100MHz;
 logic newPixel;
 logic [15:0] cameraPixelData; 
 
 logic initPixelStrobe;
-assign debug = dataReady;
 
-
-/// ILI9341 Display needs a faster clock to generate a 50 Meg output speed.
-PLL PLL_Inst(.areset(buttonReset), .inclk0(clk), .c0(clk100MHz), .locked());
 
 OV7670_Ctrl OV7670_Inst( .clk(clk), .reset(buttonReset), .vsync(vsync), 
                            .href(href), .pclk(pclk), .OV7670_Data(OV7670_Data),
                            .sda(sda), .scl(scl), .OV7670_Xclk(OV7670_Xclk),
                            .newPixel(newPixel), .pixelData(cameraPixelData));
 
-ILI9341_Driver ILI9341_DriverInst( .CLK_I(clk100MHz), .RST_I(buttonReset), 
-                                   .initPixelStrobe(initPixelStrobe), 
+ILI9341_8080_I_Driver ILI_DriverInst( .clk(clk), .reset(buttonReset), 
+                                   .newFrameStrobe(initPixelStrobe), 
                                    // only grab data while pixel isn't changing
                                    .dataReady(href & ~pclk & ~vsync),
-                                   //.dataReady(dataReady),
-                                   .pixelAddr(),
                                    .pixelDataIn(cameraPixelData),
+                                   .pixelAddr(),
+                                   .tftParallelPort(tftParallelPort), 
                                    .tftChipSelect(tftChipSelect), 
-                                   .tftMosi(tftMosi), .tftSck(tftSck), 
-                                   .tftReset(tftReset), .dataCtrl(dataCtrl));
+                                   .tftWriteEnable(tftWriteEnable), 
+                                   .tftReset(tftReset), 
+                                   .tftDataCmd(tftDataCmd));
 
-logic dataReady;
-logic [9:0] count;
-assign dataReady = ~pclk & ~vsync & (href | (count > 0));
-
-always_ff @ (posedge pclk, posedge vsync)
-    begin
-        if (vsync)
-            count <= 10'b0;
-    else
-    begin
-        if ((href) | ((count > 0) & (count < 640)))
-            count <= count + 10'b1;
-        else
-            count <= 10'b0;
-    end
-end
 
 logic vsyncEdgeCatch0, vsyncEdgeCatch1;
-always_ff @ (posedge clk100MHz, posedge buttonReset)
+always_ff @ (posedge clk, posedge buttonReset)
 begin
     if (buttonReset)
     begin

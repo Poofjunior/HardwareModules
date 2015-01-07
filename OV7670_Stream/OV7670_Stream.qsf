@@ -50,16 +50,6 @@ set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name TIMEQUEST_DO_CCPP_REMOVAL ON
-set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
-set_global_assignment -name MIF_FILE ../ILI9341_Ctrl/pixelLocParams.mif
-set_global_assignment -name MIF_FILE ../ILI9341_Ctrl/memData.mif
-set_global_assignment -name SYSTEMVERILOG_FILE ../ILI9341_Ctrl/SPI_MasterWishbone.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/OV7670_Ctrl.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/I2C_Guts.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../ILI9341_Ctrl/spi.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../ILI9341_Ctrl/ILI9341_Ctrl.sv
-set_global_assignment -name SYSTEMVERILOG_FILE OV7670_Stream.sv
-set_global_assignment -name QIP_FILE PLL.qip
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
 set_location_assignment PIN_L14 -to href
 set_location_assignment PIN_M10 -to OV7670_Xclk
@@ -75,12 +65,26 @@ set_location_assignment PIN_P16 -to OV7670_Data[5]
 set_location_assignment PIN_L15 -to OV7670_Data[3]
 set_location_assignment PIN_K16 -to OV7670_Data[1]
 set_location_assignment PIN_J15 -to reset
-set_location_assignment PIN_E10 -to tftMosi
 set_location_assignment PIN_D11 -to tftChipSelect
-set_location_assignment PIN_D9 -to tftSck
 set_location_assignment PIN_C11 -to tftReset
-set_location_assignment PIN_A12 -to dataCtrl
 set_location_assignment PIN_N15 -to scl
 set_location_assignment PIN_P14 -to sda
-set_location_assignment PIN_F13 -to debug
+set_global_assignment -name MIF_FILE ../ILI9341_MCU_Parallel_Ctrl/pixelStartParams.mif
+set_global_assignment -name MIF_FILE ../ILI9341_MCU_Parallel_Ctrl/pixelData.mif
+set_global_assignment -name MIF_FILE ../ILI9341_MCU_Parallel_Ctrl/memData.mif
+set_global_assignment -name SYSTEMVERILOG_FILE ../ILI9341_MCU_Parallel_Ctrl/ILI9341_MCU_Parallel_Ctrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE filePaths.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/OV7670_Ctrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../OV7670_Ctrl/I2C_Guts.sv
+set_global_assignment -name SYSTEMVERILOG_FILE OV7670_Stream.sv
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_location_assignment PIN_B3 -to tftDataCmd
+set_location_assignment PIN_D3 -to tftParallelPort[7]
+set_location_assignment PIN_C3 -to tftParallelPort[6]
+set_location_assignment PIN_A3 -to tftParallelPort[5]
+set_location_assignment PIN_B4 -to tftParallelPort[4]
+set_location_assignment PIN_B5 -to tftParallelPort[3]
+set_location_assignment PIN_D5 -to tftParallelPort[2]
+set_location_assignment PIN_A6 -to tftParallelPort[1]
+set_location_assignment PIN_D6 -to tftParallelPort[0]
+set_location_assignment PIN_A2 -to tftWriteEnable
