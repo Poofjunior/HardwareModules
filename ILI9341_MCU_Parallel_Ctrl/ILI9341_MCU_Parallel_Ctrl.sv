@@ -16,7 +16,7 @@ module ILI9341_MCU_Parallel_Ctrl( input logic clk, reset,
 
 /// Do not wire this module to external reset because it clocks the behavior
 /// of the rest of the internal logic
-    clkPrescaler clkPrescalerInst(.clk(clk), .reset(1'b0), .divInput(8'b100), 
+    clkPrescaler clkPrescalerInst(.clk(clk), .reset(1'b0), .divInput(8'b0), 
                        .slowClk(slowClk));                                          
                
 
@@ -71,25 +71,20 @@ module ILI9341_8080_I_Driver(
 
 
 /// ---- BEGIN: CONSTANTS ----
-/// number of values in the memory containing all of the initialization values.
+/// number of values in the memory containing all of the initialization values
     parameter NUM_INIT_PARAMS = 29;
 
 /// number of values in the memory containing the data sent at the start of a 
-/// new frame.
+/// new frame
     parameter NUM_FRAME_START_PARAMS = 11;
 
 /// Total number of pixels.
     parameter NUM_PIXELS = 76800;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
-    /*
     parameter MS_120 = 6000000; // 120 MS in clock ticks at 50 MHz
     parameter MS_5 = 250000; // 120 MS in clock ticks at 50 MHz
     parameter MS_FOR_RESET = 10000000;  // delay time in clock ticks for reset
-    */
-    parameter MS_120 = 600000; // 120 MS in clock ticks at 50 MHz
-    parameter MS_5 = 25000; // 120 MS in clock ticks at 50 MHz
-    parameter MS_FOR_RESET = 1000000;  // delay time in clock ticks for reset
 /// ---- END: CONSTANTS ----
 
 
