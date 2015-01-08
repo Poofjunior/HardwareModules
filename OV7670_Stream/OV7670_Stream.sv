@@ -38,7 +38,7 @@ OV7670_Ctrl OV7670_Inst( .clk(clk), .reset(buttonReset), .vsync(vsync),
 ILI9341_8080_I_Driver ILI_DriverInst( .clk(clk), .reset(buttonReset), 
                                    .newFrameStrobe(initPixelStrobe), 
                                    // only grab data while pixel isn't changing
-                                   .dataReady(href & ~pclk & ~vsync),
+                                   .dataReady(newPixel & href & ~pclk & ~vsync),
                                    .pixelDataIn(cameraPixelData),
                                    .pixelAddr(),
                                    .tftParallelPort(tftParallelPort), 

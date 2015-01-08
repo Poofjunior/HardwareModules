@@ -20,6 +20,7 @@ DEPTH=15;
 ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
 
+-- Note: End an I2C Transmission by putting a 1 in bit 9.
 CONTENT BEGIN
     00  :   042;
     01  :   012;
@@ -40,4 +41,10 @@ CONTENT BEGIN
     0C  :   042;
     0D  :   018;    -- HSTOP[10:3]
     0E  :   102;    -- upper bits of 20 in hex
+
+%
+    0F  :   042;
+    10  :   013;    -- COM8
+    11  :   100;    -- Disable auto white balance and auto exposure control.
+%
 END;

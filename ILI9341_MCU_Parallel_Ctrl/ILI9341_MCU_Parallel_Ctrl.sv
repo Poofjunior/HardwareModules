@@ -324,7 +324,7 @@ module ILI9341_8080_I_Driver(
             end
         end
         else begin
-            tftWriteEnable <= 'b1;
+            tftWriteEnable <= 'b0;
             memAddr <= memAddr;
         end
     end
