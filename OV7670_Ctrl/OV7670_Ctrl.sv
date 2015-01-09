@@ -76,7 +76,8 @@ module OV7670_Driver(input logic clk, reset, pclk,
     parameter DELAY_ONE = 10; 
     
     /// 8'b1 puts output at 15FPS
-    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b1, OV7670_Xclk);
+    /// 8'b0 puts output at 30FPS
+    OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Xclk);
 
     logic frameGrabberReset;
 
