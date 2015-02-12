@@ -9,7 +9,7 @@
  *       this module.
  */
 module QuadratureEncoder( input logic clk, sigA, sigB,
-                  output logic [31:0] encoderCount); 
+                  output logic [15:0] encoderCount); 
 
     // Note that states correspond with the encoder's grey code, NOT binary.
     typedef enum logic [1:0] {S0 = 2'b00, 

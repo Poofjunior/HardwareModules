@@ -24,6 +24,8 @@ module ILI9341_MCU_Parallel_Ctrl( input logic clk, reset,
     ILI9341_8080_I_Driver driverInst( .clk(slowClk), .reset(reset),
                                .newFrameStrobe(1'b0), 
                                .dataReady(1'b1),
+                               .cameraDataIn(),
+                               .pclk(),
                                 .pixelDataIn(pixelDataIn), 
                                .pixelAddr(pixelAddr),
                                .tftParallelPort(tftParallelPort),
@@ -51,6 +53,9 @@ module ILI9341_8080_I_Driver(
         input logic dataReady,     
 /// a 16-bit pixel in RGB565 format
         input logic [15:0] pixelDataIn,
+        input logic [7:0] cameraDataIn,
+        input logic pclk,
+
 /// address of the desired pixel (if grabbing data from an external memory
 /// location).
         output logic [16:0] pixelAddr,
@@ -272,25 +277,36 @@ module ILI9341_8080_I_Driver(
     end
 
 
+logic tftWriteEnableInternal;
+always_comb
+    case (state)
+        SEND_DATA: tftWriteEnable = (dataReady) ? ~pclk : 1'b0;
+    default: tftWriteEnable = tftWriteEnableInternal;
+    endcase
+
 /// Logic for incrementing memAddr and strobing data on MCU parallel port
-    always_ff @ (posedge clk)
+    always_ff @ (posedge pclk)
     begin
         /// reset case:
         if (reset | resetMemAddr | delayTicks | newFrameStrobe)
         begin
             memAddr <= 17'b0;
-            tftWriteEnable <= 1'b1;
+            //tftWriteEnable <= 1'b1;
+            tftWriteEnableInternal <= 1'b1;
             tftParallelPort <= 8'b0;
             MSB <= 1'b0;
         end
         else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
                  (state == TRANSFER_SYNC) | (state == ENABLE_DISPLAY) | 
-                 ((state == SEND_DATA) & dataReady))    
+                 (state == SEND_DATA) )    
+                 //((state == SEND_DATA) & dataReady))    
         begin
             /// Toggle tftWriteEnable Signal.
-            tftWriteEnable <= ~tftWriteEnable;
+            //tftWriteEnable <= ~tftWriteEnable;
+            tftWriteEnableInternal <= ~tftWriteEnableInternal;
 
-            if (tftWriteEnable)
+            //if (tftWriteEnable)
+            if (tftWriteEnableInternal)
             begin
             /// Simultaneously: 
             ///     bring writeEnable low (handled above)
@@ -300,9 +316,12 @@ module ILI9341_8080_I_Driver(
                     SEND_INIT_PARAMS: tftParallelPort <= initParamData[7:0];
                     ENABLE_DISPLAY:   tftParallelPort <= 8'h29;
                     SEND_PIXEL_LOC:   tftParallelPort <= pixelLocData[7:0];
+                    SEND_DATA:        tftParallelPort <= cameraDataIn[7:0]; 
+/*
                     SEND_DATA:        tftParallelPort <= MSB ? 
                                                             pixelDataIn[15:8] :
                                                             pixelDataIn[7:0];    
+*/
                 default: 
                     tftParallelPort <= initParamData[7:0];
                 endcase
@@ -324,7 +343,8 @@ module ILI9341_8080_I_Driver(
             end
         end
         else begin
-            tftWriteEnable <= 'b0;
+            //tftWriteEnable <= 'b0;
+            tftWriteEnableInternal <= 'b0;
             memAddr <= memAddr;
         end
     end

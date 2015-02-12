@@ -16,9 +16,9 @@ module SPI_EncoderReader( input logic clk,
 
     logic [7:0] dataReceived;
     logic [7:0] addressOut;
-    logic [31:0] encoderData[0:1];
+    logic [15:0] encoderData[0:1];
 
-    assign LEDsOut [7:0] = encoderData[0][7:0];
+    assign LEDsOut [7:0] = encoderData[1][7:0];
  
     QuadratureEncoder encA( .clk(clk), .sigA(enc0A), .sigB(enc0B),
                             .encoderCount(encoderData[0]));
@@ -48,25 +48,21 @@ endmodule
  *        one-byte-at-a-time.
  */
 module mem( input logic freezeData, clk,
-            input logic [31:0] encoderDataA,
-            input logic [31:0] encoderDataB,
+            input logic [15:0] encoderDataA,
+            input logic [15:0] encoderDataB,
             input logic [7:0] memAddress,
            output logic [7:0] memData);
 
-    logic [7:0] mem [0:7];
+    logic [7:0] mem [0:3];
     
     // freeze changing encoder data on the fetch signal so that it can be 
     // clocked out while it isn't changing
     always_ff @ (posedge clk)
     begin
-        mem[0] <= freezeData ? mem[0] : encoderDataA[31:24];
-        mem[1] <= freezeData ? mem[1] : encoderDataA[23:16];
-        mem[2] <= freezeData ? mem[2] : encoderDataA[15:8];
-        mem[3] <= freezeData ? mem[3] : encoderDataA[7:0];
-        mem[4] <= freezeData ? mem[4] : encoderDataB[31:24];
-        mem[5] <= freezeData ? mem[5] : encoderDataB[23:16];
-        mem[6] <= freezeData ? mem[6] : encoderDataB[15:8];
-        mem[7] <= freezeData ? mem[7] : encoderDataB[7:0];
+        mem[0] <= freezeData ? mem[0] : encoderDataA[15:8];
+        mem[1] <= freezeData ? mem[1] : encoderDataA[7:0];
+        mem[2] <= freezeData ? mem[2] : encoderDataB[15:8];
+        mem[3] <= freezeData ? mem[3] : encoderDataB[7:0];
     end
 
     // Implement reading from memory.
