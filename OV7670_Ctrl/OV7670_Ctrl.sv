@@ -5,6 +5,8 @@
  */
 `include <filePaths.sv>
 
+`define MEM_DEPTH 21
+
 
 /**
  * \brief initializes the OV7670 with the desired I2C settings and extracts
@@ -68,8 +70,8 @@ module OV7670_Driver(input logic clk, reset, pclk,
                     output logic OV7670_Xclk, newPixel,
                     output logic [15:0] pixelData);
 
-    parameter LAST_INIT_PARAM_ADDR = 15;
-    parameter SETTINGS_MEM_SIZE = 15;
+    parameter LAST_INIT_PARAM_ADDR = `MEM_DEPTH;
+    parameter SETTINGS_MEM_SIZE = `MEM_DEPTH;
 
     /// Note: these constants are based on a 50[MHz] clock speed.
     parameter RESET_TIME = 6000000; // 120 MS in clock ticks at 50 MHz
@@ -214,7 +216,7 @@ module initCameraParams(  input logic [6:0] memAddress,
                          output logic [8:0] memData);
     // TODO: Make global and declarable in the top level module.
 
-    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:14];
+    (* ram_init_file = `HARDWARE_MODULES_DIR(OV7670_Ctrl/cameraMemData.mif) *) logic [8:0] mem [0:`MEM_DEPTH - 1];
 
     assign memData = mem[memAddress];
 

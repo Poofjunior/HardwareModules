@@ -15,32 +15,41 @@
 -- Quartus II generated Memory Initialization File (.mif)
 
 WIDTH=9;
-DEPTH=15;
+DEPTH=21;
 
-ADDRESS_RADIX=HEX;
+-- NOTE: ADDRESS is in DECIMAL and Data is in HEX!
+ADDRESS_RADIX=DEC;
 DATA_RADIX=HEX;
 
 -- Note: End an I2C Transmission by putting a 1 in bit 9.
 CONTENT BEGIN
-    00  :   042;
-    01  :   012;
-    02  :   114;    -- 0x14 = QVGA and RGB565
+    00  :   042;    -- OV7670 ADDRESS
+    01  :   00C;    -- COM3
+    02  :   108;    -- Enable Prescaling of the image to sizes besides VGA.
 
-    03  :   042;
-    04  :   040;
-    05  :   1D0;    -- could be 0x110 instead
+    03  :   042;    -- OV7670 ADDRESS
+    04  :   012;
+    05  :   114;    -- 0x14 = select QVGA and RGB565 format
 
-    06  :   042;
-    07  :   032;    -- HREF
-    08  :   124;    -- HREF[2:0] = HSTART[2:0] and HREF[5:3] = HSTOP[2:0] 
+    06  :   042;    -- OV7670 ADDRESS
+    07  :   040;
+    08  :   1D0;    -- could be 0x110 instead
 
-    09  :   042;
-    0A  :   017;    -- HSTART[10:3]
-    0B  :   114;    -- upper bits of 164 in hex
+    09  :   042;    -- OV7670 ADDRESS
+    10  :   032;    -- HREF
+    11  :   124;    -- HREF[2:0] = HSTART[2:0] and HREF[5:3] = HSTOP[2:0]
 
-    0C  :   042;
-    0D  :   018;    -- HSTOP[10:3]
-    0E  :   102;    -- upper bits of 20 in hex
+    12  :   042;    -- OV7670 ADDRESS
+    13  :   017;    -- HSTART[10:3]
+    14  :   114;    -- upper bits of 164 in hex
+
+    15  :   042;    -- OV7670 ADDRESS
+    16  :   018;    -- HSTOP[10:3]
+    17  :   102;    -- upper bits of 20 in hex
+
+    18  :   042;    -- 0V7670 ADDRESS
+    19  :   011;    -- CLKRC
+    20  :   180;    -- set "double-clock" option. (PCLK as high as XCLK)
 
 %
     0F  :   042;
