@@ -28,12 +28,12 @@ CONTENT BEGIN
     02  :   108;    -- Enable Prescaling of the image to sizes besides VGA.
 
     03  :   042;    -- OV7670 ADDRESS
-    04  :   012;
-    05  :   114;    -- 0x14 = select QVGA and RGB565 format
+    04  :   012;    -- COM7
+    05  :   114;    -- 0x14 = select QVGA and RGB
 
     06  :   042;    -- OV7670 ADDRESS
-    07  :   040;
-    08  :   1D0;    -- could be 0x110 instead
+    07  :   040;    -- COM15
+    08  :   1D0;    -- full range and 565
 
     09  :   042;    -- OV7670 ADDRESS
     10  :   032;    -- HREF
@@ -49,7 +49,7 @@ CONTENT BEGIN
 
     18  :   042;    -- 0V7670 ADDRESS
     19  :   011;    -- CLKRC
-    20  :   180;    -- set "double-clock" option. (PCLK as high as XCLK)
+    20  :   140;    -- set "double-clock" option. (PCLK as high as XCLK)
 
 %
     0F  :   042;
