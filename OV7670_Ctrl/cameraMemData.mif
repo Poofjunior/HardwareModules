@@ -23,6 +23,27 @@ DATA_RADIX=HEX;
 
 -- Note: End an I2C Transmission by putting a 1 in bit 9.
 CONTENT BEGIN
+
+    09  :   042;    -- OV7670 ADDRESS
+    01  :   012;    -- COM7
+    02  :   114;    -- 0x14 = select QVGA and RGB
+
+    03  :   042;    -- OV7670 ADDRESS
+    04  :   040;    -- COM15
+    05  :   1D0;    -- full range and 565
+
+    06  :   042;    -- OV7670 ADDRESS
+    07  :   032;    -- HREF
+    08  :   124;    -- HREF[2:0] = HSTART[2:0] and HREF[5:3] = HSTOP[2:0]
+
+    09  :   042;    -- OV7670 ADDRESS
+    10  :   017;    -- HSTART[10:3]
+    11 :   114;    -- upper bits of 164 in hex
+
+    12  :   042;    -- OV7670 ADDRESS
+    13  :   018;    -- HSTOP[10:3]
+    14  :   102;    -- upper bits of 20 in hex
+%
     00  :   042;    -- OV7670 ADDRESS
     01  :   00C;    -- COM3
     02  :   108;    -- Enable Prescaling of the image to sizes besides VGA.
@@ -50,6 +71,7 @@ CONTENT BEGIN
     18  :   042;    -- 0V7670 ADDRESS
     19  :   011;    -- CLKRC
     20  :   140;    -- set "double-clock" option. (PCLK as high as XCLK)
+%
 
 %
     0F  :   042;
