@@ -5,7 +5,7 @@
  */
 `include <filePaths.sv>
 
-`define MEM_DEPTH 15
+`define MEM_DEPTH 21
 
 
 /**
