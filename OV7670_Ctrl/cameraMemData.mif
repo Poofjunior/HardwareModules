@@ -15,7 +15,7 @@
 -- Quartus II generated Memory Initialization File (.mif)
 
 WIDTH=9;
-DEPTH=21;
+DEPTH=77;
 
 -- NOTE: ADDRESS is in DECIMAL and Data is in HEX!
 ADDRESS_RADIX=DEC;
@@ -51,9 +51,81 @@ CONTENT BEGIN
     19  :   011;    -- CLKRC
     20  :   140;    -- set "double-clock" option. (PCLK as high as XCLK)
 
-%
-    0F  :   042;
-    10  :   013;    -- COM8
-    11  :   100;    -- Disable auto white balance and auto exposure control.
-%
+--- Automatic Gain Control and AEC Parameters
+    21  :   042;    -- 0V7670 ADDRESS
+    22  :   013;
+    23  :   100;            -- //37/ COM8 : Fast AGC/AEC Algorithm
+
+    24  :   042;    -- 0V7670 ADDRESS
+    25  :   000;
+    26  :   100;            -- 38/ GAIN
+
+    27  :   042;    -- 0V7670 ADDRESS
+    28  :   010;
+    29  :   100;            -- 39/ AECH
+
+    30  :   042;    -- 0V7670 ADDRESS
+    31  :   00d;
+    32  :   100;             -- 40/ COM4 :
+
+    33  :   042;    -- 0V7670 ADDRESS
+    34  :   014;
+    35  :   118;              -- 41/ COM9 : Automatic Gain Ceiling : 8x
+
+    36  :   042;    -- 0V7670 ADDRESS
+    37  :   0a5;
+    38  :   105;             -- 42/ BD50MAX: 50 Hz Banding Step Limit
+
+    39  :   042;    -- 0V7670 ADDRESS
+    40  :   0ab;
+    41  :   107;            -- 43/ BD60MAX: 60 Hz Banding Step Limit
+
+    42  :   042;    -- 0V7670 ADDRESS
+    43  :   024;
+    42  :   195;            -- 44/ AGC - Stable Operating Region Upper Limit
+
+    44  :   042;    -- 0V7670 ADDRESS
+    45  :   025;
+    46  :   133;            --45/ AGC - Stable Operating Region Lower Limit
+
+    47  :   042;    -- 0V7670 ADDRESS
+    48  :   026;
+    49  :   1e3;            --46/ AGC - Fast Mode Operating Region
+
+    50  :   042;    -- 0V7670 ADDRESS
+    51  :   09f;
+    52  :   178;           --47/ HAECC1 : Histogram based AEC Control 1
+
+    53  :   042;    -- 0V7670 ADDRESS
+    54  :   0a0;
+    55  :   168;           --48/ HAECC2 : Histogram based AEC Control 2
+
+    56  :   042;    -- 0V7670 ADDRESS
+    57  :   0a1;
+    58  :   103;           --49/ Reserved
+
+    59  :   042;    -- 0V7670 ADDRESS
+    60  :   0a6;
+    61  :   1d8;           --50/ HAECC3 : Histogram based AEC Control 3
+
+    62  :   042;    -- 0V7670 ADDRESS
+    63  :   0a7;
+    64  :   1d8;           --51/ HAECC4 : Histogram based AEC Control 4
+
+    65  :   042;    -- 0V7670 ADDRESS
+    66  :   0a8;
+    67  :   1f0;           --52/ HAECC5 : Histogram based AEC Control 5
+
+    68  :   042;    -- 0V7670 ADDRESS
+    69  :   0a9;
+    70  :   190;           --53/ HAECC6 : Histogram based AEC Control 6
+
+    71  :   042;    -- 0V7670 ADDRESS
+    72  :   0aa;
+    73  :   194;           --54/ HAECC7 : AEC Algorithm Selection
+
+    74  :   042;    -- 0V7670 ADDRESS
+    75  :   013;
+    76  :   1e5;           --55/ COM8 : Fast AGC Algorithm, Unlimited Step Size , Banding Filter ON, AGC and AEC enable.
+
 END;

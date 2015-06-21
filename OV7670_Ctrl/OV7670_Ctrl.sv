@@ -5,7 +5,7 @@
  */
 `include <filePaths.sv>
 
-`define MEM_DEPTH 21
+`define MEM_DEPTH 77
 
 
 /**
@@ -212,7 +212,7 @@ endmodule
  * \brief contains settings to send to camera
  * \details MSbit indicates end of a single transfer
  */
-module initCameraParams(  input logic [6:0] memAddress,
+module initCameraParams(  input logic [7:0] memAddress,
                          output logic [8:0] memData);
     // TODO: Make global and declarable in the top level module.
 
