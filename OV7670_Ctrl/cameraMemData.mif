@@ -15,7 +15,7 @@
 -- Quartus II generated Memory Initialization File (.mif)
 
 WIDTH=9;
-DEPTH=77;
+DEPTH=153;
 
 -- NOTE: ADDRESS is in DECIMAL and Data is in HEX!
 ADDRESS_RADIX=DEC;
@@ -82,50 +82,151 @@ CONTENT BEGIN
 
     42  :   042;    -- 0V7670 ADDRESS
     43  :   024;
-    42  :   195;            -- 44/ AGC - Stable Operating Region Upper Limit
+    44  :   195;            -- 44/ AGC - Stable Operating Region Upper Limit
 
-    44  :   042;    -- 0V7670 ADDRESS
-    45  :   025;
-    46  :   133;            --45/ AGC - Stable Operating Region Lower Limit
+    45  :   042;    -- 0V7670 ADDRESS
+    46  :   025;
+    47  :   133;            --45/ AGC - Stable Operating Region Lower Limit
 
-    47  :   042;    -- 0V7670 ADDRESS
-    48  :   026;
-    49  :   1e3;            --46/ AGC - Fast Mode Operating Region
+    48  :   042;    -- 0V7670 ADDRESS
+    49  :   026;
+    50  :   1e3;            --46/ AGC - Fast Mode Operating Region
 
-    50  :   042;    -- 0V7670 ADDRESS
-    51  :   09f;
-    52  :   178;           --47/ HAECC1 : Histogram based AEC Control 1
+    51  :   042;    -- 0V7670 ADDRESS
+    52  :   09f;
+    53  :   178;           --47/ HAECC1 : Histogram based AEC Control 1
 
-    53  :   042;    -- 0V7670 ADDRESS
-    54  :   0a0;
-    55  :   168;           --48/ HAECC2 : Histogram based AEC Control 2
+    54  :   042;    -- 0V7670 ADDRESS
+    55  :   0a0;
+    56  :   168;           --48/ HAECC2 : Histogram based AEC Control 2
 
-    56  :   042;    -- 0V7670 ADDRESS
-    57  :   0a1;
-    58  :   103;           --49/ Reserved
+    57  :   042;    -- 0V7670 ADDRESS
+    58  :   0a1;
+    59  :   103;           --49/ Reserved
 
-    59  :   042;    -- 0V7670 ADDRESS
-    60  :   0a6;
-    61  :   1d8;           --50/ HAECC3 : Histogram based AEC Control 3
+    60  :   042;    -- 0V7670 ADDRESS
+    61  :   0a6;
+    62  :   1d8;           --50/ HAECC3 : Histogram based AEC Control 3
 
-    62  :   042;    -- 0V7670 ADDRESS
-    63  :   0a7;
-    64  :   1d8;           --51/ HAECC4 : Histogram based AEC Control 4
+    63  :   042;    -- 0V7670 ADDRESS
+    64  :   0a7;
+    65  :   1d8;           --51/ HAECC4 : Histogram based AEC Control 4
 
-    65  :   042;    -- 0V7670 ADDRESS
-    66  :   0a8;
-    67  :   1f0;           --52/ HAECC5 : Histogram based AEC Control 5
+    66  :   042;    -- 0V7670 ADDRESS
+    67  :   0a8;
+    68  :   1f0;           --52/ HAECC5 : Histogram based AEC Control 5
 
-    68  :   042;    -- 0V7670 ADDRESS
-    69  :   0a9;
-    70  :   190;           --53/ HAECC6 : Histogram based AEC Control 6
+    69  :   042;    -- 0V7670 ADDRESS
+    70  :   0a9;
+    71  :   190;           --53/ HAECC6 : Histogram based AEC Control 6
 
-    71  :   042;    -- 0V7670 ADDRESS
-    72  :   0aa;
-    73  :   194;           --54/ HAECC7 : AEC Algorithm Selection
+    72  :   042;    -- 0V7670 ADDRESS
+    73  :   0aa;
+    74  :   194;           --54/ HAECC7 : AEC Algorithm Selection
 
-    74  :   042;    -- 0V7670 ADDRESS
-    75  :   013;
-    76  :   1e5;           --55/ COM8 : Fast AGC Algorithm, Unlimited Step Size , Banding Filter ON, AGC and AEC enable.
+    75  :   042;    -- 0V7670 ADDRESS
+    76  :   013;
+    77  :   1e5;           --55/ COM8 : Fast AGC Algorithm, Unlimited Step Size , Banding Filter ON, AGC and AEC enable.
+
+    78  :   042;
+    79  :   043;
+    80  :   10a;    -- //87/ Reserved
+
+    81  :   042;
+    82  :   044;
+    83  :   1f0;   -- //88/ Reserved
+
+    84  :   042;
+    85  :   045;
+    86  :   134;   -- //89/ Reserved
+
+    87  :   042;
+    88  :   046;
+    89  :   158;    -- //90/ Reserved
+
+    90  :   042;
+    91  :   047;
+    92  :   128;    -- //91/ Reserved
+
+    93: :   042;
+    94  :   048;
+    95  :   13a;    -- //92/ Reserved
+
+    96  :   042;
+    97  :   059;
+    98  :   188;    -- //93/ Reserved
+
+    99  :   042;
+    100 :   05a;
+    101 :   188;    -- //94/ Reserved
+
+    102 :   042;
+    103 :   05b;
+    104 :   144;    -- //95/ Reserved
+
+    105 :   042;
+    106 :   05c;
+    107 :   167;    -- //96/ Reserved
+
+    108 :   042;
+    109 :   05d;
+    110 :   149;    -- //97/ Reserved
+
+    111 :   042;
+    112 :   05e;
+    113 :   10e;    -- //98/ Reserved
+
+    114 :   042;
+    115 :   064;
+    116 :   104;    -- //99/ Reserved
+
+    117 :   042;
+    118 :   065;
+    119 :   120;    -- //100/ Reserved
+
+    120 :   042;
+    121 :   066;
+    122 :   105;    -- //101/ Reserved
+
+    123 :   042;
+    124 :   094;
+    125 :   104;    -- //102/ Reserved
+
+    126 :   042;
+    127 :   095;
+    128 :   108;   -- //103/ Reserved
+
+    129 :   042;
+    130 :   06c;
+    131 :   10a;    -- //104/ Reserved
+
+    132 :   042;
+    133 :   06d;
+    134 :   155;    -- //105/ Reserved
+
+    135 :   042;
+    136 :   06e;
+    137 :   111;   -- //106/ Reserved
+
+    138 :   042;
+    139 :   06f;
+    140 :   19f;    -- //107/ Reserved
+
+    141 :   042;
+    142 :   06a;
+    143 :   140;    -- //108/ Reserved
+
+    144 :   042;
+    145 :   001;
+    146 :   140;    -- //109/ REG BLUE : Reserved
+
+    147 :   042;
+    148 :   002;
+    149 :   140;    -- //110/ REG RED : Reserved
+
+    150 :   042;
+    151 :   013;
+    152 :   1e7;    -- //111/ COM8 : FAST AEC, AEC unlimited STEP, Band Filter, AGC , ARC , AWB enable.
+
 
 END;
