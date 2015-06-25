@@ -5,19 +5,18 @@
  */
 `include <filePaths.sv>
 
-`define MEM_DEPTH 153
+`define MEM_DEPTH 123
 
 
 /**
  * \brief initializes the OV7670 with the desired I2C settings and extracts
  *        each pixel
  */
-module OV7670_Ctrl( input logic clk, reset, vsync, href, pclk,
-                    input logic [7:0] OV7670_Data,
+module OV7670_Ctrl( input logic clk, reset, pclk,
+                    input logic [7:0] OV7670_data_in,
                    output logic sda, scl,
                    output logic OV7670_Xclk,
-                   output logic newPixel,
-                   output logic [15:0] pixelData);
+                   output logic [7:0] OV7670_data_out);
 
     logic i2cClk, i2cStrobe;
     logic [7:0] memAddr;
@@ -25,21 +24,18 @@ module OV7670_Ctrl( input logic clk, reset, vsync, href, pclk,
     logic busy, lastTransfer;
     logic [7:0] dataToSend;
 
+    assign OV7670_data_out[7:0] = OV7670_data_in[7:0];
+
 
     OV7670_Driver OV7670_DriverInst( .clk(clk), .reset(reset),
                                      .pclk(pclk),
                                      .i2cBusy(busy),
                                      .memData(memData),
-                                     .OV7670_Data(OV7670_Data),
-                                     .vsync(vsync),
-                                     .href(href),
                                      .dataToSend(dataToSend),
                                      .i2cStrobe(i2cStrobe),
                                      .lastTransfer(lastTransfer),
                                      .memAddr(memAddr),
-                                     .OV7670_Xclk(OV7670_Xclk),
-                                     .newPixel(newPixel),
-                                     .pixelData(pixelData));
+                                     .OV7670_Xclk(OV7670_Xclk));
 
     I2C_Guts I2C_GutsInst(.clk(clk), .reset(reset),
                           .i2cStrobe(i2cStrobe),
@@ -62,13 +58,10 @@ endmodule
 module OV7670_Driver(input logic clk, reset, pclk,
                      input logic i2cBusy,
                      input logic [8:0] memData,
-                     input logic [7:0] OV7670_Data,
-                     input logic vsync, href,
                     output logic [7:0] dataToSend,  // over SCCB interface
                     output logic i2cStrobe, lastTransfer,
                     output logic [7:0] memAddr,
-                    output logic OV7670_Xclk, newPixel,
-                    output logic [15:0] pixelData);
+                    output logic OV7670_Xclk);
 
     parameter LAST_INIT_PARAM_ADDR = `MEM_DEPTH;
     parameter SETTINGS_MEM_SIZE = `MEM_DEPTH;
@@ -81,9 +74,10 @@ module OV7670_Driver(input logic clk, reset, pclk,
     /// 8'b0 puts output at 30FPS
     OV7670_ClkDiv OV7670_ClkInst(clk, reset, 8'b0, OV7670_Xclk);
 
-    logic frameGrabberReset;
+    //logic frameGrabberReset;
 
 
+/*
     frameGrabber frameGrabberInst(.pclk(pclk),
                                   .reset(frameGrabberReset),
                                   .cameraData(OV7670_Data),
@@ -91,6 +85,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
                                   .rows(),
                                   .cols(),
                                   .newData(newPixel));
+*/
 
     logic [24:0] delayTicks;
     logic delayOff;
@@ -113,7 +108,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
             lastTransfer <= memData[8];
             i2cStrobe <= 'b0;
             delayTicks <= 'b0;
-            frameGrabberReset <= 1'b1;
+            //frameGrabberReset <= 1'b1;
         end
         else if (delayOff)
         begin
@@ -151,7 +146,7 @@ module OV7670_Driver(input logic clk, reset, pclk,
                 begin
                     i2cStrobe <= 1'b0;
                     state <= INIT_COMPLETE;
-                    frameGrabberReset <= (vsync & ~href);
+                    //frameGrabberReset <= (vsync & ~href);
                 end
             endcase
         end

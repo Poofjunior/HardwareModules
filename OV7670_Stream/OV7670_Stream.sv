@@ -12,42 +12,42 @@
  */
 module OV7670_Stream( /// Camera inputs
                       input logic clk, reset, vsync, href, pclk,
-                      input logic [7:0] OV7670_Data,
+                      input logic [7:0] OV7670_data_in,
                       /// Camera outputs
                      output logic sda, scl,
                      output logic OV7670_Xclk,
                      /// Screen outputs
-                     output logic [7:0] tftParallelPort,
+                     output logic [7:0] tft_parallel_port_out,
                      output logic tftChipSelect, tftWriteEnable, tftReset,
                      output logic tftDataCmd);
-                     
+
 logic buttonReset;
 assign buttonReset = ~reset;
 
-logic newPixel;
-logic [15:0] cameraPixelData; 
-
 logic initPixelStrobe;
+logic [7:0] OV7670_data_out;
 
 
-OV7670_Ctrl OV7670_Inst( .clk(clk), .reset(buttonReset), .vsync(vsync), 
-                           .href(href), .pclk(pclk), .OV7670_Data(OV7670_Data),
-                           .sda(sda), .scl(scl), .OV7670_Xclk(OV7670_Xclk),
-                           .newPixel(newPixel), .pixelData(cameraPixelData));
+OV7670_Ctrl OV7670_Inst( .clk(clk),
+                         .reset(buttonReset),
+                         .pclk(pclk),
+                         .OV7670_data_in(OV7670_data_in),
+                         .sda(sda),
+                         .scl(scl),
+                         .OV7670_Xclk(OV7670_Xclk),
+                         .OV7670_data_out(OV7670_data_out));
 
-ILI9341_8080_I_Driver ILI_DriverInst( .clk(clk), .reset(buttonReset), 
-                                   .newFrameStrobe(initPixelStrobe), 
-                                   // only grab data while pixel isn't changing
-                                   //.dataReady(newPixel & href & ~pclk & ~vsync),
-                                   .dataReady(href & ~pclk & ~vsync),
-                                   .pixelDataIn(cameraPixelData),
-                                   //.pixelDataIn(16'hDEAD),
-                                   .pixelAddr(),
-                                   .tftParallelPort(tftParallelPort), 
-                                   .tftChipSelect(tftChipSelect), 
-                                   .tftWriteEnable(tftWriteEnable), 
-                                   .tftReset(tftReset), 
-                                   .tftDataCmd(tftDataCmd));
+ILI9341_8080_I_Driver ILI_DriverInst( .clk(clk), .reset(buttonReset),
+                                 .newFrameStrobe(initPixelStrobe),
+                                 // only grab data while pixel isn't changing
+                                 .dataReady(href & ~pclk & ~vsync),
+                                 .tft_parallel_port_in(OV7670_data_out),
+                                 .tft_parallel_port_out(tft_parallel_port_out),
+                                 .tftChipSelect(tftChipSelect),
+                                 .tftWriteEnable(tftWriteEnable),
+                                 .pixelAddr(),
+                                 .tftReset(tftReset),
+                                 .tftDataCmd(tftDataCmd));
 
 
 logic vsyncEdgeCatch0, vsyncEdgeCatch1;

@@ -42,32 +42,32 @@ endmodule
  *        the display. Display settings are stored in ram internal to this 
  *        module.
  */
-module ILI9341_8080_I_Driver(   
+module ILI9341_8080_I_Driver(
 /// standard clock and reset signals
         input logic clk, reset,
-/// a positive edge indicates the start of a new frame 
-        input logic newFrameStrobe, 
-/// restricts when new data is sent out to the display. Hard-wire to 1 if 
+/// a positive edge indicates the start of a new frame
+        input logic newFrameStrobe,
+/// restricts when new data is sent out to the display. Hard-wire to 1 if
 /// not needed.
-        input logic dataReady,     
-/// a 16-bit pixel in RGB565 format
-        input logic [15:0] pixelDataIn,
+        input logic dataReady,
+// an 8-bit parallel port with input formatted in RGB565
+        input logic [7:0] tft_parallel_port_in,
+/// output signals to ILI9341 MCU 8080-I Parallel Interface
+        output logic [7:0] tft_parallel_port_out,
 /// address of the desired pixel (if grabbing data from an external memory
 /// location).
         output logic [16:0] pixelAddr,
-/// output signals to ILI9341 MCU 8080-I Parallel Interface
-        output logic [7:0] tftParallelPort,
-        output logic tftChipSelect, 
-        output logic tftWriteEnable, 
+        output logic tftChipSelect,
+        output logic tftWriteEnable,
         output logic tftReset,
  /// indicates whether parallel bus byte is cmd or data based on memory values
-        output logic tftDataCmd); 
+        output logic tftDataCmd);
 
 /// Custom "stateType" for the Finite-State Machine
-    typedef enum logic [3:0] {INIT, TRANSFER_SYNC, TRANSFER_SYNC_DELAY, 
+    typedef enum logic [3:0] {INIT, TRANSFER_SYNC, TRANSFER_SYNC_DELAY,
                               HOLD_RESET, ENABLE_DISPLAY, ENABLE_DISPLAY_DELAY,
-                              SEND_INIT_PARAMS, WAIT_TO_SEND, SEND_PIXEL_LOC, 
-                              SEND_DATA, DONE} 
+                              SEND_INIT_PARAMS, WAIT_TO_SEND, SEND_PIXEL_LOC,
+                              SEND_DATA, DONE}
                              stateType;
 
 
@@ -75,7 +75,7 @@ module ILI9341_8080_I_Driver(
 /// number of values in the memory containing all of the initialization values
     parameter NUM_INIT_PARAMS = 29;
 
-/// number of values in the memory containing the data sent at the start of a 
+/// number of values in the memory containing the data sent at the start of a
 /// new frame
     parameter NUM_FRAME_START_PARAMS = 11;
 
@@ -281,31 +281,29 @@ module ILI9341_8080_I_Driver(
         begin
             memAddr <= 17'b0;
             tftWriteEnable <= 1'b1;
-            tftParallelPort <= 8'b0;
+            tft_parallel_port_out <= 8'b0;
             MSB <= 1'b0;
         end
-        else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) | 
-                 (state == TRANSFER_SYNC) | (state == ENABLE_DISPLAY) | 
-                 ((state == SEND_DATA) & dataReady))    
+        else if ((state == SEND_INIT_PARAMS) | (state == SEND_PIXEL_LOC) |
+                 (state == TRANSFER_SYNC) | (state == ENABLE_DISPLAY) |
+                 ((state == SEND_DATA) & dataReady))
         begin
             /// Toggle tftWriteEnable Signal.
             tftWriteEnable <= ~tftWriteEnable;
 
             if (tftWriteEnable)
             begin
-            /// Simultaneously: 
+            /// Simultaneously:
             ///     bring writeEnable low (handled above)
             ///     load data onto parallel port (depending on state)
                 case (state)
-                    TRANSFER_SYNC:    tftParallelPort <= 8'b0;
-                    SEND_INIT_PARAMS: tftParallelPort <= initParamData[7:0];
-                    ENABLE_DISPLAY:   tftParallelPort <= 8'h29;
-                    SEND_PIXEL_LOC:   tftParallelPort <= pixelLocData[7:0];
-                    SEND_DATA:        tftParallelPort <= MSB ? 
-                                                            pixelDataIn[15:8] :
-                                                            pixelDataIn[7:0];    
+                    TRANSFER_SYNC:    tft_parallel_port_out <= 8'b0;
+                    SEND_INIT_PARAMS: tft_parallel_port_out <= initParamData[7:0];
+                    ENABLE_DISPLAY:   tft_parallel_port_out <= 8'h29;
+                    SEND_PIXEL_LOC:   tft_parallel_port_out <= pixelLocData[7:0];
+                    SEND_DATA:        tft_parallel_port_out <= tft_parallel_port_in[7:0];
                 default: 
-                    tftParallelPort <= initParamData[7:0];
+                    tft_parallel_port_out <= initParamData[7:0];
                 endcase
             end
             else begin
