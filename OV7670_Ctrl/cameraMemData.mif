@@ -38,6 +38,7 @@ CONTENT BEGIN
     09  :   042;    -- OV7670 ADDRESS
     10  :   032;    -- HREF
     11  :   1A4; -- HREF   Edge offset and low 3 bits of HSTART and HSTOP
+-- hex((1 << 7) + (HSTOP[2:0] << 3) + HSTART[2:0])
 
     12  :   042;    -- OV7670 ADDRESS
     13  :   017;    -- HSTART[10:3]
