@@ -74,16 +74,18 @@ module phaseOffset120(
 /// 0 to 1170 range
 logic [10:0] lookup_b_plus_120;
 logic [10:0] lookup_b_minus_120;
-
 assign lookup_b_plus_120 = gain + 'd390;
 assign lookup_b_minus_120 = gain - 'd390;
 
 logic overflow_a;
 logic underflow_c;
-
 assign overflow_a = (lookup_b_plus_120 > 1120);
-assign underflow_c = (lookup_b_minus_120 > 1120);
 
+assign underflow_c = (lookup_b_minus_120 > 1120);
+/// equivalent to: = (lookup_b_minus_120 < 0) because of overflow to bit 10.
+
+logic [10:0] lookup_a_mod_1170;
+logic [10:0] lookup_c_mod_1170;
 assign lookup_a_mod_1170 = lookup_b_plus_120 - 'd1170;
 assign lookup_c_mod_1170 = lookup_b_minus_120 + 'd1170;
 
@@ -96,9 +98,12 @@ begin
         lookup_c <= 'b0;
     end
     else begin
-        lookup_a <= overflow_a ? lookup_a_mod_1170 : lookup_b_plus_120;
+        lookup_a <= overflow_a ? lookup_a_mod_1170[9:0] :
+                                 lookup_b_plus_120[9:0];
         lookup_b <= gain;
-        lookup_c <= underflow_c ? lookup_c_mod_1170 : lookup_b_plus_120;
+
+        lookup_c <= underflow_c ? lookup_c_mod_1170[9:0] :
+                                  lookup_b_plus_120[9:0];
     end
 end
 
