@@ -70,11 +70,19 @@ module phaseOffset120(
             input logic [9:0] gain,
            output logic [9:0] lookup_a, lookup_b, lookup_c);
 
-logic [9:0] lookup_b_plus_120;
-logic [9:0] lookup_b_minus_120;
+/// bit width should be large enough to identify rollover beyond
+/// 0 to 1170 range
+logic [10:0] lookup_b_plus_120;
+logic [10:0] lookup_b_minus_120;
+
+assign lookup_b_plus_120 = gain + 'd390;
+assign lookup_b_minus_120 = gain - 'd390;
 
 logic overflow_a;
 logic underflow_c;
+
+assign overflow_a = (lookup_b_plus_120 > 1120);
+assign underflow_c = (lookup_b_minus_120 > 1120);
 
 assign lookup_a_mod_1170 = lookup_b_plus_120 - 'd1170;
 assign lookup_c_mod_1170 = lookup_b_minus_120 + 'd1170;
@@ -89,8 +97,8 @@ begin
     end
     else begin
         lookup_a <= overflow_a ? lookup_a_mod_1170 : lookup_b_plus_120;
-        lookup_a <= underflow_c ? lookup_c_mod_1170 : lookup_b_plus_120;
         lookup_b <= gain;
+        lookup_c <= underflow_c ? lookup_c_mod_1170 : lookup_b_plus_120;
     end
 end
 
