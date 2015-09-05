@@ -1,7 +1,7 @@
 module fastModulo1170(
             input logic clk, reset,
             input logic [12:0] encoder_input,
-           output logic [12:0] input_mod_1170);
+           output logic [10:0] input_mod_1170);
 
 logic greater_than_1170;
 logic greater_than_2340;

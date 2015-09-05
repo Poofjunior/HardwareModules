@@ -1,0 +1,67 @@
+module motor_control_unit(
+            input logic clk, reset,
+           output logic reset_encoder_count, apply_initial_commutation);
+
+typedef enum logic [1:0] { INIT,
+                           VECTOR_ALIGN_DELAY,
+                           ZERO_ENCODER_DELAY,
+                           STANDARD_OPERATION} stateType;
+
+stateType state;
+
+logic delay_off;
+logic [31:0] delay_time;
+
+parameter VECTOR_ALIGN_DELAY_TICKS = 'd100000000;
+parameter ZERO_ENCODER_DELAY_TICKS = 'd5000000;
+
+assign delay_off = ~(&delay_time);
+
+always_ff @ (posedge clk, posedge reset)
+begin
+    if (reset)
+    begin
+        state <= INIT;
+    end
+    else if (delay_off)
+    begin
+        case (state)
+            INIT:
+            begin
+                state <= VECTOR_ALIGN_DELAY;
+                delay_time <= VECTOR_ALIGN_DELAY_TICKS;
+            end
+            VECTOR_ALIGN_DELAY:
+            begin
+                state <= ZERO_ENCODER_DELAY;
+                delay_time <= ZERO_ENCODER_DELAY_TICKS;
+            end
+            ZERO_ENCODER_DELAY:
+                state <= STANDARD_OPERATION;
+            STANDARD_OPERATION:
+                state <= STANDARD_OPERATION;
+            default: state <= STANDARD_OPERATION;
+        endcase
+    end
+    else delay_time <= delay_time - 'b1;
+end
+
+
+always_ff @ (posedge clk)
+begin
+    case (state)
+        VECTOR_ALIGN_DELAY: apply_initial_commutation <= 'b1;
+        default apply_initial_commutation <= 'b0;
+    endcase
+end
+
+
+always_ff @ (posedge clk)
+begin
+    case (state)
+        ZERO_ENCODER_DELAY: reset_encoder_count <= 'b1;
+        default reset_encoder_count <= 'b0;
+    endcase
+end
+
+endmodule

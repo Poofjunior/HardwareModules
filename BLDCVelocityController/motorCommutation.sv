@@ -1,14 +1,15 @@
 module motorCommutation(
             input logic clk, reset, enable,
             input logic [9:0] gain,
-            input logic [12:0] cycle_position,
+            input logic [10:0] cycle_position,
            output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
 
 logic [9:0] lookup_a, lookup_b, lookup_c;
-logic [9:0] duty_cycle_a, duty_cycle_b, duty_cycle_c;
+logic [20:0] duty_cycle_a, duty_cycle_b, duty_cycle_c;
 
 phaseOffset120 phase_offset_120_instance(
-                    .gain(gain),
+                    .clk(clk), .reset(reset),
+                    .cycle_position(cycle_position),
                     .lookup_a(lookup_a),
                     .lookup_b(lookup_b),
                     .lookup_c(lookup_c));
@@ -18,10 +19,18 @@ threePhaseSineTable three_phase_sine_table_instance(
                         .lookup_a(lookup_a),
                         .lookup_b(lookup_b),
                         .lookup_c(lookup_c),
-                        .sine_a(duty_cycle_a),
-                        .sine_b(duty_cycle_b),
-                        .sine_c(duty_cycle_c));
+                        .sine_a(sine_a),
+                        .sine_b(sine_b),
+                        .sine_c(sine_c));
 
+// TODO: clamp duty_cycle values to max value if they overflow.
+// TODO: scale correctly. Taking the upper 10 bits is a complete hack and
+//       wont produce the right range.
+assign duty_cycle_a = (sine_a * gain) >> 10;
+assign duty_cycle_b = (sine_b * gain) >> 10;
+assign duty_cycle_c = (sine_c * gain) >> 10;
+
+// pwm MUST be 10 bits such that output frequency is 24.44ish [Khz]
 pwm pwm_a( .clk(clk), .reset(reset),
            .duty_cycle(duty_cycle_a),
            .pwm(pwm_phase_a));
@@ -67,15 +76,15 @@ endmodule
 
 module phaseOffset120(
             input logic clk, reset,
-            input logic [9:0] gain,
+            input logic [10:0] cycle_position,
            output logic [9:0] lookup_a, lookup_b, lookup_c);
 
 /// bit width should be large enough to identify rollover beyond
 /// 0 to 1170 range
 logic [10:0] lookup_b_plus_120;
 logic [10:0] lookup_b_minus_120;
-assign lookup_b_plus_120 = gain + 'd390;
-assign lookup_b_minus_120 = gain - 'd390;
+assign lookup_b_plus_120 = cycle_position + 'd390;
+assign lookup_b_minus_120 = cycle_position - 'd390;
 
 logic overflow_a;
 logic underflow_c;
@@ -100,7 +109,7 @@ begin
     else begin
         lookup_a <= overflow_a ? lookup_a_mod_1170[9:0] :
                                  lookup_b_plus_120[9:0];
-        lookup_b <= gain;
+        lookup_b <= cycle_position;
 
         lookup_c <= underflow_c ? lookup_c_mod_1170[9:0] :
                                   lookup_b_plus_120[9:0];
@@ -113,10 +122,21 @@ endmodule
 
 
 module pwm( input logic clk, reset,
-            input logic [9:0] duty_cycle,
+            input logic [10:0] duty_cycle,
            output logic pwm);
 
-/// FIXME: actually write this later!
-assign pwm = duty_cycle[9];
+logic [10:0] count;
+
+always_ff @ (posedge clk, posedge reset)
+begin
+    if (reset)
+        count <= 'b0;
+    else
+        begin
+            count <= count + 'b1;
+        end
+end
+
+assign pwm = (duty_cycle >= count);
 
 endmodule
