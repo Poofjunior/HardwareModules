@@ -5,7 +5,7 @@ module motorCommutation(
            output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
 
 logic [9:0] lookup_a, lookup_b, lookup_c;
-logic [20:0] duty_cycle_a, duty_cycle_b, duty_cycle_c;
+logic [31:0] raw_gain_a, raw_gain_b, raw_gain_c;
 
 phaseOffset120 phase_offset_120_instance(
                     .clk(clk), .reset(reset),
@@ -26,21 +26,29 @@ threePhaseSineTable three_phase_sine_table_instance(
 // TODO: clamp duty_cycle values to max value if they overflow.
 // TODO: scale correctly. Taking the upper 10 bits is a complete hack and
 //       wont produce the right range.
-assign duty_cycle_a = (sine_a * gain) >> 10;
-assign duty_cycle_b = (sine_b * gain) >> 10;
-assign duty_cycle_c = (sine_c * gain) >> 10;
+assign raw_gain_a = (sine_a * gain) >> 10;
+assign raw_gain_b = (sine_b * gain) >> 10;
+assign raw_gain_c = (sine_c * gain) >> 10;
+
+clamp clamp_phase_a(.raw_gain(raw_gain_a),
+                    .clipped_gain(clipped_gain_a));
+clamp clamp_phase_b(.raw_gain(raw_gain_b),
+                    .clipped_gain(clipped_gain_b));
+clamp clamp_phase_c(.raw_gain(raw_gain_c),
+                    .clipped_gain(clipped_gain_c));
+
 
 // pwm MUST be 10 bits such that output frequency is 24.44ish [Khz]
 pwm pwm_a( .clk(clk), .reset(reset),
-           .duty_cycle(duty_cycle_a),
+           .duty_cycle(clipped_gain_a),
            .pwm(pwm_phase_a));
 
 pwm pwm_b( .clk(clk), .reset(reset),
-           .duty_cycle(duty_cycle_b),
+           .duty_cycle(clipped_gain_b),
            .pwm(pwm_phase_b));
 
 pwm pwm_c( .clk(clk), .reset(reset),
-           .duty_cycle(duty_cycle_b),
+           .duty_cycle(clipped_gain_c),
            .pwm(pwm_phase_c));
 
 endmodule
@@ -139,4 +147,17 @@ end
 
 assign pwm = (duty_cycle >= count);
 
+endmodule
+
+
+
+/// TODO: fix input/output bit widths
+module clamp( input logic [31:0] raw_gain,
+             output logic [10:0] clipped_gain);
+
+parameter max_val = 11'b11111111111;
+
+    assign clipped_gain = (raw_gain > max_val)?
+                            clipped_gain :
+                            raw_gain;
 endmodule
