@@ -10,6 +10,7 @@ logic [31:0] encoder_count;
 logic [31:0] time_per_tick;
 logic [12:0] torque_vector_pos;
 logic [15:0] raw_velocity;
+logic [15:0] raw_velocity_mux_out;
 
 logic reset_encoder_count;
 logic apply_initial_commutation;
@@ -33,9 +34,13 @@ motor_control_unit control_unit_instance(
 TickTimeToVelocityLookup(.time_per_tick(time_per_tick[13:0]),
                          .velocity(raw_velocity));
 
+assign raw_velocity_mux_out = (time_per_tick > 32'h000007FF) ?
+                                    'b0 :
+                                     raw_velocity;
+
 iirFilter iir_filter_instance(
             .clk(clk), .reset(reset), .enable('b1),
-            .raw_velocity(raw_velocity),
+            .raw_velocity(raw_velocity_mux_out),
             .filtered_velocity(filtered_velocity));
 
 PIController pi_controller_instance(
