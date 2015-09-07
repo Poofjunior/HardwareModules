@@ -28,7 +28,7 @@ last_velocity_index = 0 # dummy value
 
 num_bits = int(ceil(log(table_end, 2)))
 
-print "WIDTH={0};".format(num_bits)
+print "WIDTH={0};".format(14)
 print "DEPTH={0};".format(table_end)
 print "ADDRESS_RADIX=DEC;"
 print "DATA_RADIX=DEC;"
@@ -37,7 +37,7 @@ print
 print "CONTENT BEGIN"
 
 # Print undefined value for a tick time of zero.
-print "0  :  0 --- undefined"
+print "0  :  0; --- undefined"
 
 # iterate through smallest measurable tick time (max speed) to assumed
 # largest tick time (min speed)

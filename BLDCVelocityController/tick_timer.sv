@@ -15,7 +15,7 @@ parameter MAX_TIME = 'hFFFFFFFF;
     logic [31:0] lastTickTime;  /// timestamp as of last recorded tick
 
     microsTimer microsTimerInst( .clk(clk), .reset(reset),
-                                 .stateChange(stateChange),
+                                 .stateChange(state_change),
                                  .micros(micros));
 
     always_ff @ (posedge clk, posedge reset)
@@ -31,7 +31,7 @@ parameter MAX_TIME = 'hFFFFFFFF;
             currTickTime <= micros;
 
 /// update new time-per-tick each time the encoder state machine changes.
-            if (stateChange)
+            if (state_change)
             begin
                 lastTickTime <= currTickTime;
                 time_per_tick <= currTickTime - lastTickTime;

@@ -56,6 +56,9 @@ set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name SDC_FILE BLDCVelocityController.out.sdc
+set_global_assignment -name MIF_FILE sinewave_lut.mif
+set_global_assignment -name MIF_FILE velocity_lut.mif
 set_global_assignment -name SYSTEMVERILOG_FILE tick_time_to_velocity_lookup.sv
 set_global_assignment -name SYSTEMVERILOG_FILE tick_timer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE quadrature_encoder.sv

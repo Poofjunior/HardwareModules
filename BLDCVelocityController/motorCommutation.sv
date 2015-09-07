@@ -64,15 +64,15 @@ clamp clamp_phase_c(.raw_gain(abs_gain_c),
 
 
 // pwm MUST be 10 bits such that output frequency is 24.44ish [Khz]
-pwm pwm_a( .clk(clk), .reset(reset),
+pwm pwm_a( .clk(clk), .reset(reset), .enable(enable),
            .duty_cycle(clipped_gain_a),
            .pwm(pwm_phase_a));
 
-pwm pwm_b( .clk(clk), .reset(reset),
+pwm pwm_b( .clk(clk), .reset(reset), .enable(enable),
            .duty_cycle(clipped_gain_b),
            .pwm(pwm_phase_b));
 
-pwm pwm_c( .clk(clk), .reset(reset),
+pwm pwm_c( .clk(clk), .reset(reset), .enable(enable),
            .duty_cycle(clipped_gain_c),
            .pwm(pwm_phase_c));
 
@@ -163,11 +163,22 @@ endmodule
 
 
 
-module pwm( input logic clk, reset,
+module pwm( input logic clk, reset, enable,
             input logic [10:0] duty_cycle,
            output logic pwm);
 
 logic [10:0] count;
+logic [10:0] saved_duty_cycle;
+
+always_ff @ (posedge clk, posedge reset)
+if (reset)
+begin
+    saved_duty_cycle <= 11'b0;
+end
+else if (enable)
+begin
+    saved_duty_cycle <= duty_cycle;
+end
 
 always_ff @ (posedge clk, posedge reset)
 begin
@@ -179,7 +190,7 @@ begin
         end
 end
 
-assign pwm = (duty_cycle >= count);
+assign pwm = (saved_duty_cycle >= count);
 
 endmodule
 

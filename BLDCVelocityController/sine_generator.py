@@ -17,8 +17,8 @@ print "--- table values are magnitude * sin(table_index) from 0 to "
 
 print "WIDTH={0};".format(sine_num_bits)
 print "DEPTH={0};".format(table_size)
-print "ADDRESS_RADIX=DEC"
-print "DATA_RADIX=DEC"
+print "ADDRESS_RADIX=DEC;"
+print "DATA_RADIX=DEC;"
 
 print
 print "CONTENT BEGIN"
