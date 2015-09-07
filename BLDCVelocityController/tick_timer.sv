@@ -66,11 +66,11 @@ module microsTimer #(TICKS_PER_MICROSECOND = 50)
     begin
         if (mhzReset)
         begin
-            mhzCount <= 'b0;
+            mhzCount <= 6'b0;
         end
         else
         begin
-            mhzCount <= mhzCount + 'b1;
+            mhzCount <= mhzCount + 6'b1;
         end
     end
 

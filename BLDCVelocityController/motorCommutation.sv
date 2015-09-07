@@ -2,7 +2,7 @@
 
 module motorCommutation(
             input logic clk, reset, enable,
-            input logic [9:0] gain,
+            input logic signed [9:0] gain,
             input logic [10:0] cycle_position,
            output logic pwm_phase_a, pwm_phase_b, pwm_phase_c,
            output logic bridge_side_a, bridge_side_b, bridge_side_c);
@@ -14,6 +14,7 @@ logic signed [11:0] sine_a, sine_b, sine_c;
 logic signed [21:0] raw_gain_a, raw_gain_b, raw_gain_c;
 
 logic [21:0] abs_gain_a, abs_gain_b, abs_gain_c;
+logic [10:0] clipped_gain_a, clipped_gain_b, clipped_gain_c;
 
 phaseOffset120 phase_offset_120_instance(
                     .clk(clk), .reset(reset),
@@ -39,9 +40,9 @@ assign raw_gain_b = (sine_b * gain);
 assign raw_gain_c = (sine_c * gain);
 
 
-assign bridge_side_a = (raw_gain_a < 0);
-assign bridge_side_b = (raw_gain_b < 0);
-assign bridge_side_c = (raw_gain_c < 0);
+assign bridge_side_a = (raw_gain_a < 22'sh0);
+assign bridge_side_b = (raw_gain_b < 22'sh0);
+assign bridge_side_c = (raw_gain_c < 22'sh0);
 
 // Take absolute value. Comparison already done for bridge_side_x logic.
 assign abs_gain_a = (bridge_side_a) ?
@@ -95,15 +96,18 @@ module threePhaseSineTable( input logic clk, reset,
                            output logic signed [11:0] sine_b,
                            output logic signed [11:0] sine_c);
 
-(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_a [0:255];
-(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_b [0:255];
-(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_c [0:255];
+(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_a [0:2047];
+(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_b [0:2047];
+(* ram_init_file = `HARDWARE_MODULES_DIR(BLDCVelocityController/velocity_lut.mif) *) logic [11:0] sinewave_c [0:2047];
 
 /// TODO: implement one sine table with serialized access
 ///       instead of wasting space
-    assign sine_a = sinewave_a[lookup_a];
-    assign sine_b = sinewave_b[lookup_b];
-    assign sine_c = sinewave_c[lookup_c];
+always_comb
+begin
+    sine_a = sinewave_a[lookup_a];
+    sine_b = sinewave_b[lookup_b];
+    sine_c = sinewave_c[lookup_c];
+end
 endmodule
 
 
