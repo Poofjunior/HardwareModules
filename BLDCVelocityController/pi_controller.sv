@@ -22,9 +22,9 @@ logic [15:0] accumulated_error;
 logic [31:0] raw_output;
 assign raw_output = p_gain + i_gain;
 
-always_ff @ (posedge clk, posedge enable)
-if (enable)
+always_ff @ (posedge clk)
 begin
+if (enable)
     begin
         p_gain <= kp * error;
         i_gain <= ki * accumulated_error;

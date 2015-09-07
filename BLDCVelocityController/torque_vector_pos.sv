@@ -14,8 +14,8 @@ module torque_vector_pos(
 
 logic [12:0] forward_vector;
 logic [12:0] reverse_vector;
-assign forward_vector = torque_vector_pos + 'd292;
-assign reverse_vector = torque_vector_pos - 'd292;
+assign forward_vector = encoder_ticks + 12'd292;
+assign reverse_vector = encoder_ticks - 12'd292;
 
 assign torque_vector_pos = direction ?
                                 forward_vector :

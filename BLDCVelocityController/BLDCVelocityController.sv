@@ -2,10 +2,12 @@ module BLDCVelocityController(
         input logic clk, reset,
         input logic [15:0] desired_velocity,
         input logic encoder_a, encoder_b,
-        input logic direction,
-       output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
+       output logic pwm_phase_a, pwm_phase_b, pwm_phase_c,
+       output logic bridge_side_a, bridge_side_b, bridge_side_c);
 
 logic encoder_change;
+logic encoder_direction; // unused
+
 logic [31:0] encoder_count;
 logic [31:0] time_per_tick;
 logic [12:0] torque_vector_pos;
@@ -19,7 +21,8 @@ logic apply_initial_commutation;
 QuadratureEncoder encoder_instance(.clk(clk),
                                    .sig_a(encoder_a), .sig_b(encoder_b),
                                    .encoder_count(encoder_count),
-                                   .state_change(encoder_change));
+                                   .state_change(encoder_change),
+                                   .direction(encoder_direction));
 
 TickTimer tick_timer_instance( .clk(clk), .reset(reset),
                                 .state_change(encoder_change),
@@ -50,7 +53,7 @@ PIController pi_controller_instance(
                 .output_gain(output_gain));
 
 torque_vector_pos( .encoder_ticks(encoder_count[12:0]),
-                   .direction(direction),
+                   .direction(desired_velocity[15]),
                    .torque_vector_pos(torque_vector_pos));
 
 fastModulo1170 fast_module_1170_instance(
@@ -64,6 +67,8 @@ motorCommutation motor_commutation_instance(
                     .cycle_position(input_mod_1170),
                     .pwm_phase_a(pwm_phase_a),
                     .pwm_phase_b(pwm_phase_b),
-                    .pwm_phase_c(pwm_phase_c));
-
+                    .pwm_phase_c(pwm_phase_c),
+                    .bridge_side_a(bridge_side_a),
+                    .bridge_side_b(bridge_side_b),
+                    .bridge_side_c(bridge_side_c));
 endmodule

@@ -10,7 +10,8 @@
  */
 module QuadratureEncoder( input logic clk, sig_a, sig_b,
                          output logic [31:0] encoder_count,
-                         output logic state_change);
+                         output logic state_change,
+                         output logic direction);
 
     // Note that states correspond with the encoder's grey code, NOT binary.
     typedef enum logic [1:0] {S0 = 2'b00,
@@ -26,19 +27,55 @@ module QuadratureEncoder( input logic clk, sig_a, sig_b,
         prevState <= state;
 
     case ( {prevState, state} )
-        {S0, S1}: encoder_count <= encoder_count + 1;
-        {S1, S2}: encoder_count <= encoder_count + 1;
-        {S2, S3}: encoder_count <= encoder_count + 1;
-        {S3, S0}: encoder_count <= encoder_count + 1;
-        {S2, S1}: encoder_count <= encoder_count - 1;
-        {S3, S2}: encoder_count <= encoder_count - 1;
-        {S0, S3}: encoder_count <= encoder_count - 1;
-        {S1, S0}: encoder_count <= encoder_count - 1;
-        default:    encoder_count <= encoder_count;
+        {S0, S1}:
+        begin
+            encoder_count <= encoder_count + 1;
+            direction <= 1'b1;
+        end
+        {S1, S2}:
+        begin
+            encoder_count <= encoder_count + 1;
+            direction <= 1'b1;
+        end
+        {S2, S3}:
+        begin
+            encoder_count <= encoder_count + 1;
+            direction <= 1'b1;
+        end
+        {S3, S0}:
+        begin
+            encoder_count <= encoder_count + 1;
+            direction <= 1'b1;
+        end
+        {S2, S1}:
+        begin
+            encoder_count <= encoder_count - 1;
+            direction <= 1'b0;
+        end
+        {S3, S2}:
+        begin
+            encoder_count <= encoder_count - 1;
+            direction <= 1'b0;
+        end
+        {S0, S3}:
+        begin
+            encoder_count <= encoder_count - 1;
+            direction <= 1'b0;
+        end
+        {S1, S0}:
+        begin
+            encoder_count <= encoder_count - 1;
+            direction <= 1'b0;
+        end
+        default:
+        begin
+            encoder_count <= encoder_count;
+            direction <= 1'b1;
+        end
     endcase
 
     end
 
-assign state_change = (prevState == state);
+assign state_change = (prevState != state);
 
 endmodule
