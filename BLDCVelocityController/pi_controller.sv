@@ -8,15 +8,16 @@ module PIController(
             input logic enable,
             input logic signed [15:0] desired_velocity,
             input logic signed [15:0] actual_velocity,
-            input logic signed [13:0] kp, ki,
-           output logic signed [10:0] output_gain);
+            input logic signed [15:0] kp, ki,
+           output logic signed [11:0] output_gain);
 
-logic signed [31:0] result;
+/// 33 bits to detect overflow.
+logic signed [32:0] result;
 logic signed [15:0] error;
 assign error = desired_velocity - actual_velocity;
 
-logic signed [31:0] p_gain;
-logic signed [31:0] i_gain;
+logic signed [32:0] p_gain;
+logic signed [32:0] i_gain;
 
 /// TODO: handle overflow on i_term
 logic signed [15:0] accumulated_error;
@@ -39,8 +40,13 @@ begin
 /// TODO: fix windup. This overflows pretty quickly.
     accumulated_error <= accumulated_error + error;
 
-/// Produce an 11-bit output. Clamp overflow to max value.
-    output_gain <= result >> 21;
+/// FIXME: verify that this clamping makes sense.
+/// TODO: clamp output to prevent overflow!
+/// Produce a 12-bit output. Clamp overflow to max value.
+/// Clamp overflow too, but it's already 0.
+    output_gain <= result[32] ?
+                    12'h7FF:
+                    result[31:20];
 end
 
 

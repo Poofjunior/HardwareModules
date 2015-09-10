@@ -15,8 +15,8 @@ logic commutation_enable;
 
 logic [10:0] input_mod_1170;
 
-logic signed [10:0] output_gain;
-logic signed [10:0] output_gain_mux_out;
+logic signed [11:0] output_gain;
+logic signed [11:0] output_gain_mux_out;
 logic signed [15:0] filtered_velocity;
 
 logic [31:0] encoder_count;
@@ -83,11 +83,11 @@ assign output_gain_mux_out = (controller_override) ?
                                 1'b1:
                                 output_gain;
 */
-parameter [10:0] fixed_gain = 11'h3FF;
+parameter [11:0] fixed_gain = 12'h7FF;
 always_comb
 begin
     integer i;
-    for (i = 0; i < 11; i = i + 1)
+    for (i = 0; i < 12; i = i + 1)
     begin
         output_gain_mux_out[i] = (controller_override) ?
                                     fixed_gain[i] :

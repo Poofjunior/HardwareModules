@@ -6,17 +6,18 @@ module motorCommutation(
             input logic [10:0] cycle_position,
            output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
 
-parameter [22:0] offset = 23'h3FF800;
 
 logic [11:0] clamped_gain;
 
 logic [10:0] lookup_a, lookup_b, lookup_c;
 logic signed [11:0] sine_a, sine_b, sine_c;
 
-logic signed [22:0] product_a, product_b, product_c;
+logic signed [23:0] product_a, product_b, product_c;
+parameter [23:0] offset = 24'h3FF800;
 
 /// raw_gain_x should be unsigned after offset is added
-logic [22:0] raw_gain_a, raw_gain_b, raw_gain_c;
+logic [23:0] unscaled_duty_cycle_a, unscaled_duty_cycle_b, unscaled_duty_cycle_c;
+logic [10:0] duty_cycle_a, duty_cycle_b, duty_cycle_c;
 
 
 phaseOffset120 phase_offset_120_instance(
@@ -43,21 +44,27 @@ assign product_a = (sine_a * clamped_gain);
 assign product_b = (sine_b * clamped_gain);
 assign product_c = (sine_c * clamped_gain);
 
-assign raw_gain_a = product_a + offset;
-assign raw_gain_b = product_b + offset;
-assign raw_gain_c = product_c + offset;
+assign unscaled_duty_cycle_a = product_a + offset;
+assign unscaled_duty_cycle_b = product_b + offset;
+assign unscaled_duty_cycle_c = product_c + offset;
+
+/// adding offset should make raw_gain positive only, so raw_gain_x MSbit
+/// is irrelevant.
+assign duty_cycle_a = unscaled_duty_cycle_a[22:12];
+assign duty_cycle_b = unscaled_duty_cycle_b[22:12];
+assign duty_cycle_c = unscaled_duty_cycle_c[22:12];
 
 // pwm MUST be 11 bits such that output frequency is 24.44ish [Khz]
 pwm pwm_a( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(raw_gain_a >> 12),
+           .duty_cycle(duty_cycle_a),
            .pwm(pwm_phase_a));
 
 pwm pwm_b( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(raw_gain_b >> 12),
+           .duty_cycle(duty_cycle_b),
            .pwm(pwm_phase_b));
 
 pwm pwm_c( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(raw_gain_c >> 12),
+           .duty_cycle(duty_cycle_c),
            .pwm(pwm_phase_c));
 
 endmodule
