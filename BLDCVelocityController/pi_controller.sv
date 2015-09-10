@@ -9,8 +9,9 @@ module PIController(
             input logic signed [15:0] desired_velocity,
             input logic signed [15:0] actual_velocity,
             input logic signed [13:0] kp, ki,
-           output logic signed [9:0] output_gain);
+           output logic signed [10:0] output_gain);
 
+logic signed [31:0] result;
 logic signed [15:0] error;
 assign error = desired_velocity - actual_velocity;
 
@@ -20,8 +21,7 @@ logic signed [31:0] i_gain;
 /// TODO: handle overflow on i_term
 logic signed [15:0] accumulated_error;
 
-//logic [31:0] raw_output;
-//assign raw_output = p_gain + i_gain;
+assign result = (p_gain + i_gain);
 
 always_ff @ (posedge clk, posedge reset)
 if (reset)
@@ -39,9 +39,10 @@ begin
 /// TODO: fix windup. This overflows pretty quickly.
     accumulated_error <= accumulated_error + error;
 
-/// Produce a 10-bit output. Clamp overflow to max value.
-    output_gain <= (p_gain + i_gain) >> 22;
+/// Produce an 11-bit output. Clamp overflow to max value.
+    output_gain <= result >> 21;
 end
+
 
 //assign output_gain = actual_velocity[9:0];
 

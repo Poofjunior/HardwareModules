@@ -2,19 +2,22 @@
 
 module motorCommutation(
             input logic clk, reset, enable,
-            input logic signed [9:0] gain,
+            input logic signed [11:0] gain, // -2048 to 2047
             input logic [10:0] cycle_position,
-           output logic pwm_phase_a, pwm_phase_b, pwm_phase_c,
-           output logic bridge_side_a, bridge_side_b, bridge_side_c);
+           output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
 
+parameter [22:0] offset = 23'h3FF800;
+
+logic [11:0] clamped_gain;
 
 logic [10:0] lookup_a, lookup_b, lookup_c;
-
 logic signed [11:0] sine_a, sine_b, sine_c;
-logic signed [21:0] raw_gain_a, raw_gain_b, raw_gain_c;
 
-logic [21:0] abs_gain_a, abs_gain_b, abs_gain_c;
-logic [10:0] clipped_gain_a, clipped_gain_b, clipped_gain_c;
+logic signed [22:0] product_a, product_b, product_c;
+
+/// raw_gain_x should be unsigned after offset is added
+logic [22:0] raw_gain_a, raw_gain_b, raw_gain_c;
+
 
 phaseOffset120 phase_offset_120_instance(
                     .clk(clk), .reset(reset),
@@ -32,49 +35,29 @@ threePhaseSineTable three_phase_sine_table_instance(
                         .sine_b(sine_b),
                         .sine_c(sine_c));
 
-// TODO: clamp duty_cycle values to max value if they overflow.
-// TODO: scale correctly. Taking the upper 10 bits is a complete hack and
-//       wont produce the right range.
-assign raw_gain_a = (sine_a * gain);
-assign raw_gain_b = (sine_b * gain);
-assign raw_gain_c = (sine_c * gain);
+assign clamped_gain = (gain == -2048) ?
+                            -2047 :
+                            gain;
 
+assign product_a = (sine_a * clamped_gain);
+assign product_b = (sine_b * clamped_gain);
+assign product_c = (sine_c * clamped_gain);
 
-assign bridge_side_a = (raw_gain_a < 22'sh0);
-assign bridge_side_b = (raw_gain_b < 22'sh0);
-assign bridge_side_c = (raw_gain_c < 22'sh0);
+assign raw_gain_a = product_a + offset;
+assign raw_gain_b = product_b + offset;
+assign raw_gain_c = product_c + offset;
 
-// Take absolute value. Comparison already done for bridge_side_x logic.
-assign abs_gain_a = (bridge_side_a) ?
-                            (~raw_gain_a + 1'b1) : // convert to positive
-                            raw_gain_a;
-assign abs_gain_b = (bridge_side_b) ?
-                            (~raw_gain_b + 1'b1) : // convert to positive
-                            raw_gain_b;
-assign abs_gain_c = (bridge_side_c) ?
-                            (~raw_gain_c + 1'b1) : // convert to positive
-                            raw_gain_c;
-
-
-clamp clamp_phase_a(.raw_gain(abs_gain_a),
-                    .clipped_gain(clipped_gain_a));
-clamp clamp_phase_b(.raw_gain(abs_gain_b),
-                    .clipped_gain(clipped_gain_b));
-clamp clamp_phase_c(.raw_gain(abs_gain_c),
-                    .clipped_gain(clipped_gain_c));
-
-
-// pwm MUST be 10 bits such that output frequency is 24.44ish [Khz]
+// pwm MUST be 11 bits such that output frequency is 24.44ish [Khz]
 pwm pwm_a( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(clipped_gain_a),
+           .duty_cycle(raw_gain_a >> 12),
            .pwm(pwm_phase_a));
 
 pwm pwm_b( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(clipped_gain_b),
+           .duty_cycle(raw_gain_b >> 12),
            .pwm(pwm_phase_b));
 
 pwm pwm_c( .clk(clk), .reset(reset), .enable(enable),
-           .duty_cycle(clipped_gain_c),
+           .duty_cycle(raw_gain_c >> 12),
            .pwm(pwm_phase_c));
 
 endmodule
@@ -167,6 +150,10 @@ endmodule
 
 
 
+/**
+ \brief produces a 1/2048 = 24414 [KHz] pwm output with a duty cycle input
+        granularity of 11 bits
+*/
 module pwm( input logic clk, reset, enable,
             input logic [10:0] duty_cycle,
            output logic pwm);
@@ -187,10 +174,10 @@ end
 always_ff @ (posedge clk, posedge reset)
 begin
     if (reset)
-        count <= 1'b0;
+        count <= 11'b0;
     else
         begin
-            count <= count + 1'b1;
+            count <= count + 11'b1;
         end
 end
 
@@ -201,10 +188,10 @@ endmodule
 
 
 /// TODO: fix input/output bit widths
-module clamp( input logic [31:0] raw_gain,
+module clamp( input logic [21:0] raw_gain,
              output logic [10:0] clipped_gain);
 
-parameter max_val = 11'b11111111111;
+parameter max_val = 11'h3FF;
 
     assign clipped_gain = (raw_gain > max_val) ?
                             max_val :
