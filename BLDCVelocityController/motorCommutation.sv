@@ -3,11 +3,12 @@
 module motorCommutation(
             input logic clk, reset, enable,
             input logic signed [11:0] gain, // -2048 to 2047
-            input logic [10:0] cycle_position,
+            input logic [10:0] torque_vector_position,
            output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
 
 
 logic [11:0] clamped_gain;
+logic [11:0] abs_gain;
 
 logic [10:0] lookup_a, lookup_b, lookup_c;
 logic signed [11:0] sine_a, sine_b, sine_c;
@@ -39,10 +40,13 @@ threePhaseSineTable three_phase_sine_table_instance(
 assign clamped_gain = (gain == -2048) ?
                             -2047 :
                             gain;
+assign abs_gain = (clamped_gain < 'b0) ?
+                    ~clamped_gain + 'b1 :
+                    clamped_gain;
 
-assign product_a = (sine_a * clamped_gain);
-assign product_b = (sine_b * clamped_gain);
-assign product_c = (sine_c * clamped_gain);
+assign product_a = (sine_a * abs_gain);
+assign product_b = (sine_b * abs_gain);
+assign product_c = (sine_c * abs_gain);
 
 assign unscaled_duty_cycle_a = product_a + offset;
 assign unscaled_duty_cycle_b = product_b + offset;

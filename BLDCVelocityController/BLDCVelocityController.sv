@@ -99,7 +99,7 @@ end
 //assign output_gain_mux_out = output_gain;
 
 torque_vector_pos advance_angle_generator( .encoder_ticks(encoder_count[12:0]),
-                                           .direction(desired_velocity[15]),
+                                           .direction(output_gain[11]),
                                            .torque_vector_pos(torque_vector_pos));
 
 
@@ -112,7 +112,7 @@ fastModulo1170 fast_module_1170_instance(
 motorCommutation motor_commutation_instance(
                     .clk(clk), .reset(reset), .enable(commutation_enable),
                     .gain(output_gain_mux_out),
-                    .cycle_position(input_mod_1170),
+                    .torque_vector_position(input_mod_1170),
                     .pwm_phase_a(pwm_phase_a),
                     .pwm_phase_b(pwm_phase_b),
                     .pwm_phase_c(pwm_phase_c));
