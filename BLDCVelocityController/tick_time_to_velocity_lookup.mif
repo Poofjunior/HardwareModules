@@ -1,0 +1,12 @@
+-- Memory Initialization File (.mif)
+
+WIDTH=16;
+DEPTH=2048;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+	0000  :   0000;
+	0001  :   0001;
+END;

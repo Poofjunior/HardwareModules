@@ -1,6 +1,7 @@
 module BLDCVelocityController(
         input logic clk, reset,
-        input logic enable, // TODO: reroute enable to the internal controller.
+        input logic mosi, sck, cs,
+       output logic miso,
         input logic signed [15:0] desired_velocity,
         input logic encoder_a, encoder_b,
        output logic pwm_phase_a, pwm_phase_b, pwm_phase_c);
@@ -27,6 +28,12 @@ logic [15:0] raw_velocity_mux_out;
 
 logic reset_encoder_count;
 logic apply_initial_commutation;
+
+/// diagnostics-related logic
+logic [7:0] address_out;
+logic [7:0] spi_data_to_send;
+logic data_received;
+logic set_new_data;
 
 /// TODO: add synchronizer to asynchronous encoder inputs.
 QuadratureEncoder encoder_instance(.clk(clk), .reset(reset),
@@ -116,4 +123,24 @@ motorCommutation motor_commutation_instance(
                     .pwm_phase_a(pwm_phase_a),
                     .pwm_phase_b(pwm_phase_b),
                     .pwm_phase_c(pwm_phase_c));
+
+spiSendReceive spi_inst(.cs(cs), .sck(sck), .mosi(mosi),
+                        .setNewData(set_new_data),
+                        .dataToSend(spi_data_to_send),
+                        .miso(miso), .dataReceived(data_received));
+
+dataCtrl data_ctrl_inst(.cs(cs), .sck(sck), .writeEnable(1'b0),
+                        .spiDataIn(data_received), .setNewData(set_new_data),
+                        .addressOut(address_out));
+
+diagnosticsSyncMem diagnostics_mem(.freezeData(~cs), .clk(clk),
+                                   .encoder_count(encoder_count[15:0]),
+                                   .time_per_tick(time_per_tick),
+                                   .raw_velocity(raw_velocity),
+                                   .filtered_velocity(filtered_velocity),
+                                   .output_gain({4'b0000, output_gain}),
+                                   .torque_vector_pos({3'b000, torque_vector_pos}),
+                                   .electrical_angle_ticks({4'b0000, input_mod_1170}),
+                                   .memAddress(address_out),
+                                   .memData(spi_data_to_send));
 endmodule
