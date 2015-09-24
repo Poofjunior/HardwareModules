@@ -1,90 +1,70 @@
 /**
- * synthesizable spi peripheral
+ * buffered spi
  * Joshua Vasquez
- * September 26 - October 8, 2014
  */
 
-module spi( input logic cs, sck, mosi, 
-            output logic miso, 
-            output logic [7:0] LEDsOut);
+/**
+ * \brief an spi slave
+ * \details DATA_WIDTH defines the number of bits per SPI transfer and
+ *          must be a multiple of 8.
+ */
+module spi
+#(parameter DATA_WIDTH = 8)
+          ( input logic clk, reset,
+            input logic cs, sck, mosi,
+            input logic read_data,
+           output logic miso,
+           output logic busy,
+            input logic [(DATA_WIDTH-1):0] data_to_send,
+           output logic [(DATA_WIDTH-1):0] data_received);
 
-            logic [7:0] temp;
-            assign temp[7:0] = LEDsOut;
-// Display most recent data.
-// Send previous data.
-    spiSendReceive spiInst(.cs(cs), .sck(sck), .mosi(mosi),
-                    .dataToSend(LEDsOut), .miso(miso), 
-                    .dataReceived(LEDsOut));  
-endmodule
+logic clear_new_data;
+logic [1:0] new_data_edge;
+logic write_enable;
 
 
-module spiSendReceive( input logic cs, sck, mosi,
-            input logic [7:0] dataToSend, 
-            output logic miso,
-            output logic [7:0] dataReceived);
-
-    logic setNewData;
-    dataCtrl dataCtrlInst(.cs(cs), .sck(sck), .setNewData(setNewData));
-    logic [7:0] shiftReg;
-    logic validClk;
-	 
-    assign validClk = cs ? 0   :
-                           sck;
-
-    
-    always_ff @ (negedge validClk, posedge setNewData)
+/// Clear new data as soon as it arrives to prevent it from being
+/// continuously loaded into the buffer.
+always_ff @ (posedge clk, posedge reset)
+begin
+    if (reset)
     begin
-        if (setNewData)
-        begin
-            shiftReg[7] <= dataToSend[0];
-            shiftReg[6] <= dataToSend[1];
-            shiftReg[5] <= dataToSend[2];
-            shiftReg[4] <= dataToSend[3];
-            shiftReg[3] <= dataToSend[4];
-            shiftReg[2] <= dataToSend[5];
-            shiftReg[1] <= dataToSend[6];
-            shiftReg[0] <= dataToSend[7];
-        end
-        else
-        begin
-        // Handle Output.
-            shiftReg[7:0] <= (shiftReg[7:0] >> 1);
-        end
+        clear_new_data <= 'b0;
+        new_data_edge[1:0] <= 'b0;
     end
-    
-    always_ff @ (posedge validClk)
-    begin
-        // Handle Input.
-            dataReceived[0] <= mosi;
-            dataReceived[1] <= dataReceived[0];
-            dataReceived[2] <= dataReceived[1];
-            dataReceived[3] <= dataReceived[2];
-            dataReceived[4] <= dataReceived[3];
-            dataReceived[5] <= dataReceived[4];
-            dataReceived[6] <= dataReceived[5];
-            dataReceived[7] <= dataReceived[6];
-      end
-
-    assign miso = shiftReg[0];
-
-endmodule
-
-
-module dataCtrl(input logic cs, sck,
-                output logic setNewData);
-
-    logic [2:0] bitCount;
-    
-    assign setNewData = ~bitCount[2] & ~bitCount[1] & ~bitCount[0];
-
-    always_ff @ (negedge sck, posedge cs)
-    begin
-        if (cs)
-            bitCount <= 3'b0;
-        else
-        begin
-            bitCount <= bitCount + 3'b1;
-        end
+    else begin
+        clear_new_data <= new_data;
+        new_data_edge[0] <= new_data_edge[1];
+        new_data_edge[1] <= new_data;
     end
+end
 
+assign write_enable = new_data_edge[1] & ~new_data_edge[0];
+
+spi_slave_interface #(DATA_WIDTH)
+    spi_inst(.clk(clk),
+             .reset(reset),
+             .cs(cs),
+             .sck(sck),
+             .mosi(mosi),
+             .miso(miso),
+             .clear_new_data_flag(clear_new_data),
+             .busy(busy),
+             .synced_new_data_flag(new_data),
+             .data_to_send(data_to_send),
+             .synced_data_received(spi_data_received));
+
+
+fifo #(.DATA_WIDTH(DATA_WIDTH),
+       .DATA_ENTRIES(256))
+     fifo_inst(.clk(clk),
+               .reset(reset),
+               .data_input(spi_data_received),
+               .write_enable(write_enable),
+               .read_enable(read_data),
+               .data_output(data_received),
+               .num_entries(),
+               .fifo_full(),
+               .fifo_empty());
 endmodule
+
