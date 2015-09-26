@@ -70,12 +70,13 @@ assign miso = shift_reg[0];
 
 // Handle external synchronization into output's clock domain.
 
-synchronizer #(16) data_synchronizer(
+synchronizer #(DATA_WIDTH) data_synchronizer(
                     .clk(clk),
                     .unsynced_data(data_received[DATA_WIDTH-1:0]),
                     .synced_data(synced_data_received[DATA_WIDTH-1:0]));
 
 // Count bits...
+/// FIXME: parameterize
 bit_counter #(5) spi_bit_count(
                     .clk(sck),
                     .reset(cs),
@@ -85,7 +86,7 @@ always_latch
 begin
     if (clear_new_data_flag)
         new_data_flag <= 'b0;
-    else if (bit_count[4])
+    else if (&bit_count[2:0])  /// FIXME: parameterize.
         new_data_flag <= 'b1;
 end
 

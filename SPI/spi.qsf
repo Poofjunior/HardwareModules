@@ -62,13 +62,15 @@ set_location_assignment PIN_A11 -to LEDsOut[3]
 set_location_assignment PIN_B13 -to LEDsOut[2]
 set_location_assignment PIN_A13 -to LEDsOut[1]
 set_location_assignment PIN_A15 -to LEDsOut[0]
-set_location_assignment PIN_C3 -to cs
-set_location_assignment PIN_B4 -to mosi
-set_location_assignment PIN_B5 -to sck
-set_location_assignment PIN_A3 -to miso
+set_location_assignment PIN_F13 -to cs
+set_location_assignment PIN_T13 -to mosi
+set_location_assignment PIN_T15 -to sck
+set_location_assignment PIN_T12 -to miso
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name SYSTEMVERILOG_FILE fifo.sv
 set_global_assignment -name SYSTEMVERILOG_FILE spi_slave_interface.sv
 set_global_assignment -name SYSTEMVERILOG_FILE spi.sv
+set_location_assignment PIN_R8 -to clk
+set_location_assignment PIN_J15 -to reset
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
