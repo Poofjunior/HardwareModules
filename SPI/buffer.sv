@@ -7,6 +7,9 @@
 /**
  * \brief a fifo buffer
  * \details DATA_ENTRIES must be a power of 2 (i.e: 128, 256, etc.)
+ * \param write_enable one clock cycle per write
+ * \param read_enable one clock cycle per read
+ * \param 
  */
 module fifo
 #(parameter DATA_WIDTH = 8,
