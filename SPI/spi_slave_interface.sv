@@ -24,10 +24,11 @@ module spi_slave_interface
            output logic [(DATA_WIDTH-1):0] synced_data_received);
 
 
+logic new_data_flag;
 logic [(DATA_WIDTH-1):0] shift_reg;
 logic [(DATA_WIDTH-1):0] data_received;
 
-logic [4:0] bit_count;
+//logic [4:0] bit_count;
 
 logic valid_clk;
 
@@ -51,12 +52,12 @@ begin
            shift_reg[DATA_WIDTH-(i+1)] <= data_to_send[i];
         end
     end
-    else
-    begin
+    else begin
     // Handle Output.
         shift_reg[(DATA_WIDTH-1):0] <= (shift_reg[(DATA_WIDTH-1):0] >> 1);
     end
 end
+
 
 always_ff @ (posedge valid_clk)
 begin
@@ -64,41 +65,54 @@ begin
         data_received[(DATA_WIDTH-1):0] <=
                                     (data_received[(DATA_WIDTH-1):0] << 1);
         data_received[0] <= mosi;
-  end
+end
+
 
 assign miso = shift_reg[0];
 
-// Handle external synchronization into output's clock domain.
 
+// Handle external synchronization into output's clock domain.
 synchronizer #(DATA_WIDTH) data_synchronizer(
                     .clk(clk),
                     .unsynced_data(data_received[DATA_WIDTH-1:0]),
                     .synced_data(synced_data_received[DATA_WIDTH-1:0]));
 
 // Count bits...
-/// FIXME: parameterize
+/*
+/// FIXME: parameterize according to the top level.
 bit_counter #(5) spi_bit_count(
                     .clk(sck),
                     .reset(cs),
                     .bit_count(bit_count[4:0]));
+*/
 
-always_latch
+
+/*
+always_ff @ (posedge set_new_data, posedge clear_new_data_flag)
 begin
     if (clear_new_data_flag)
+    begin
         new_data_flag <= 'b0;
-    else if (&bit_count[2:0])  /// FIXME: parameterize.
+    end
+    else begin
         new_data_flag <= 'b1;
+    end
 end
 
+assign synced_new_data_flag = new_data_flag;
+*/
+
+
+assign synced_new_data_flag = set_new_data;
+/*
 // Synchronize new_data output signal
 synchronizer #(1) new_data_synchronizer(
                     .clk(clk),
                     .unsynced_data(new_data_flag),
                     .synced_data(synced_new_data_flag));
-
-
-
+*/
 endmodule
+
 
 
 module synchronizer
@@ -138,6 +152,7 @@ logic [10:0] bitCount;
 logic byteOut;          // indicates one byte has been received
 logic byteOutNegEdge;
 
+
 /// byteOut logic:
 always_ff @ (posedge sck, posedge cs)
 begin
@@ -151,6 +166,8 @@ else
         bitCount <= bitCount + 'b1;
         // AND all the lower bits together.
         byteOut <= &bitCount[$clog2(DATA_WIDTH)-1:0];
+        //byteOut <= byteOutTmp;
+
     end
 end
 
@@ -175,6 +192,7 @@ endmodule
 
 
 
+/*
 module bit_counter
 #(parameter WIDTH = 5)
                   ( input logic clk, reset,
@@ -189,3 +207,4 @@ begin
 end
 
 endmodule
+*/

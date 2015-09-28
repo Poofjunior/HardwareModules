@@ -44,10 +44,10 @@ begin
     end
     else begin
         casez ({write_enable, read_enable})
-            'b01: num_entries <= (num_entries == 0 )?
+            2'b01: num_entries <= (num_entries == 'b0 )?
                                     num_entries:
                                     num_entries - 'b1;
-            'b10: num_entries <= (num_entries == DATA_ENTRIES)?
+            2'b10: num_entries <= (num_entries == DATA_ENTRIES)?
                                     num_entries:
                                     num_entries + 'b1;
          default: num_entries <= num_entries;
