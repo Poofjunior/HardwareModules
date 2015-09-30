@@ -18,7 +18,6 @@ module spi_slave_interface
             input logic cs, sck, mosi,
            output logic miso,
             input logic clear_new_data_flag,
-           output logic busy,
            output logic synced_new_data_flag,
             input logic [(DATA_WIDTH-1):0] data_to_send,
            output logic [(DATA_WIDTH-1):0] synced_data_received);
@@ -87,7 +86,6 @@ bit_counter #(5) spi_bit_count(
 */
 
 
-/*
 always_ff @ (posedge set_new_data, posedge clear_new_data_flag)
 begin
     if (clear_new_data_flag)
@@ -99,18 +97,14 @@ begin
     end
 end
 
-assign synced_new_data_flag = new_data_flag;
-*/
 
 
-assign synced_new_data_flag = set_new_data;
-/*
 // Synchronize new_data output signal
 synchronizer #(1) new_data_synchronizer(
                     .clk(clk),
                     .unsynced_data(new_data_flag),
+                    //.unsynced_data(set_new_data),
                     .synced_data(synced_new_data_flag));
-*/
 endmodule
 
 

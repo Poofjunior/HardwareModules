@@ -62,9 +62,9 @@ set_location_assignment PIN_A11 -to LEDsOut[3]
 set_location_assignment PIN_B13 -to LEDsOut[2]
 set_location_assignment PIN_A13 -to LEDsOut[1]
 set_location_assignment PIN_A15 -to LEDsOut[0]
-set_location_assignment PIN_F13 -to cs
-set_location_assignment PIN_B12 -to mosi
-set_location_assignment PIN_T15 -to sck
+set_location_assignment PIN_T9 -to cs
+set_location_assignment PIN_T15 -to mosi
+set_location_assignment PIN_F13 -to sck
 set_location_assignment PIN_T12 -to miso
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
